@@ -4,20 +4,39 @@ output: github_document
 date: "2025-05-18"
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, message=FALSE}
 library(tidyverse)
 library(knitr)
-opts_chunk$set(echo = FALSE, message = FALSE)
+library(showtext)
+opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 7)
+
+font_add_google("Lato")
+showtext_auto()
+
+custom_theme <- function(...){
+  theme_bw() + 
+    theme(
+      text = element_text(family = "Lato", size = 14),
+      ...
+    )
+}
+
+theme_set(custom_theme())
+country_scale <- c(
+  "US" = "#377EB8",
+  "Canada" = "#E41A1C"
+)
 ```
 
 ```{r import}
+# lazy=TRUE here 
+options(readr.read_lazy = TRUE)
 investors <- read_csv("data/investors.csv")
 investments <- read_csv("data/investments.csv")
 funding_rounds <- read_csv("data/funding_rounds.csv")
 orgs <- read_csv("data/organizations.csv")
 ```
-
-
 
 ```{r find_cloud_giants}
 
@@ -33,6 +52,7 @@ clouds <- investors |>
   )) |> 
   drop_na(cloud_giant)
 
+# What do we get if we just search for the terms google/microsoft/amazon
 alt_filter_clouds <- investors |> 
   mutate(cloud_giant = str_detect(name, "Google|Microsoft|Amazon")) |> 
   filter(cloud_giant)
@@ -43,7 +63,7 @@ cloud_investments <- investments |>
     by = c("investor_uuid" = "uuid")
     ) |> 
   left_join(
-    select(funding_rounds, uuid, raised_amount, investor_count, investment_type, announced_on),
+    select(funding_rounds, uuid, raised_amount, investor_count, investment_type, announced_on, org_uuid),
     by = c("funding_round_uuid" = "uuid"))
 
 alt_cloud_investments <- investments |> 
@@ -57,6 +77,22 @@ mismatches <- cloud_investments |>
   filter(!(name %in% alt_cloud_investments$name)) |> 
   count(investor_name) |> 
   arrange(desc(n))
+
+cloud_orgs <- cloud_investments |> 
+  select(cloud_giant, investor_name, org_uuid) |> 
+  distinct() |> 
+  left_join(orgs, by = c("org_uuid" = "uuid"))
+
+cloud_investments |>
+  group_by(cloud_giant, investor_name) |> 
+  count() |> 
+  group_by(cloud_giant) |> 
+  arrange(n) |> 
+  summarize(aliases = paste0(investor_name, " (", n, ") ", collapse = ", ")) |> 
+  rename("Cloud corp" = cloud_giant,
+         "Aliases (# deals)" = aliases) |> 
+  kable()
+  
 ```
 
 # Summary stats
@@ -69,29 +105,40 @@ tribble(
   "# of unique funding rounds", nrow(funding_rounds),
   "# of investors", nrow(investors),
   "# of companies receiving investment", nrow(orgs),
-  "Median investors in a given funding round", 
+  "Median investors in a given funding round", median(funding_rounds$investor_count, na.rm=T)
 ) |> 
-  kable(caption = "Top-level summary statistics ")
+  kable(caption = "Top-level summary statistics of full dataset")
 
 ```
+
+The table below is a bit messy conceptually because it's processing the same funding round multiple times often.
 
 ```{r}
 
 cloud_investments |> 
   group_split(cloud_giant) |> 
+  # Also convoluted but couldn't think of another way lol 
+  list(list(mutate(investments, cloud_giant = "All investments") |> 
+              left_join(
+                select(funding_rounds, uuid, raised_amount, investor_count, investment_type, org_uuid, announced_on),
+                by = c("funding_round_uuid" = "uuid"))
+              )) |> 
+  flatten() |> 
   map(\(cloud_corp){
     cloud_giant_name <- unique(cloud_corp$cloud_giant)
     tribble(
       ~Statistic, ~Value,
       "Total number of deals", nrow(cloud_corp),
-      "Total dollar amount of participated deals (including other investors)", sum(cloud_corp$raised_amount, na.rm=T),
+      "Total dollar amount of participated deals (in millions, including other investors)", sum(cloud_corp$raised_amount, na.rm=T)/1e6,
       "Number of investing aliases", length(unique(cloud_corp$investor_name)),
       # "Most popular stage of investment", sort(table(cloud_corp$investment_type), descending = T)[1] |>  names(), # shitty way to do that lol
-      'Proportion of time that they “lead” funding rounds', sum(cloud_corp$is_lead_investor)/length(cloud_corp$is_lead_investor),
-      "Median size of participating deal", median(cloud_corp$raised_amount, na.rm=T),
+      '% of time that they “lead” funding rounds', 100*sum(cloud_corp$is_lead_investor, na.rm=T)/length(cloud_corp$is_lead_investor),
+      "Median size of participating deal", median(cloud_corp$raised_amount, na.rm=T)/1e6,
+      "Companies receiving investment", length(unique(cloud_corp$org_uuid)),
       "Proportion of deals involving AI (operationalize)", NaN,
       "Proportion of deals investing into cloud infra", NaN
     ) |> 
+      mutate(Value = format(round(Value, 1), nsmall=1, big.mark=",")) |> 
       rename(!!cloud_giant_name := Value)
   }) |> 
   reduce(left_join, by = "Statistic") |> 
@@ -99,5 +146,80 @@ cloud_investments |>
 
 ```
 
+# High-level trends
+
+## AI vs Non-AI
+
+## "Ouroboros" of Cloud
+
+When is Big Cloud are investing in other companies that do cloud infra (Kubernetes)?
+
+# Dependence of investment receivers on Big Cloud
+
+Can we measure when one Big Cloud co has invested a large amount of company’s investment total?
+
+(how can we operationalize this given the dataset? Similar to lead/secondary question?)
+
+# GovTech
+
+What kind of govtech firms to Big Cloud invest in?
+
+# Cloud vs Non-Cloud
+
+Compare cloud companies investment strategies to “non-cloud” tech, eg Meta/Apple, or edge, eg Intel
+
+# Changes over time
+
+When does Amazon become a cloud company? What about the others? Is there some “natural” progression?
+What external data will we need?
+
+# Lead/ secondary: Can we quantify/ describe the difference in target firm when Big Cloud Lead investor vs secondary investor?
+
+# Depending on kind of funding round? Can we test if VC deals are diff than others? Or if amounts are generally bigger when the Big Three invest or lead?
+
+# International and “Third world” development
+
+Would probably be code to incorporate an "all EU" designation if we can get an easy list of the country codes. Each company receiving investment is listed once per cloud giant in the table below, so if Google invested in Asian Company LLC 3 times it'd still only appear once.
+
+```{r}
+
+cloud_orgs |> 
+  group_split(cloud_giant) |> 
+  # list(list(investments |> 
+  #             left_join(select(funding_rounds, uuid, org_uuid), by = c("funding_round_uuid" = "uuid")) |> 
+  #             mutate(cloud_giant = "all investments") |> 
+  #             select(cloud_giant, investor_name, org_uuid) |> 
+  #             distinct() |> 
+  #             left_join(orgs, by = c("org_uuid" = "uuid")) 
+  #     )) |> 
+  # flatten() |> 
+  map(\(cloud_corp){
+    total_n <- length(unique(cloud_corp$org_uuid))
+    cloud_giant_name <- unique(cloud_corp$cloud_giant)
+    top_ten <- cloud_corp |> 
+      count(country_code) |> 
+      slice_max(order_by = n, n = 10)
+    all_others <- cloud_corp |> 
+      filter(!(country_code %in% top_ten$country_code)) |> 
+      count() |> 
+      mutate(country_code = "All others for this cloud corp")
+    bind_rows(top_ten, all_others) |> 
+      mutate(n = paste0(n, " (", round(100*n/total_n, 2), "%)")) |> 
+      rename(!!cloud_giant_name := n)
+  }) |> 
+  reduce(full_join, by = "country_code") |> 
+  kable(caption = "Summary statistics by cloud corp")
+
+```
+
+There seems to be Third World development / investment arms maintained by the big 3 cloud:
+
+- https://www.crunchbase.com/organization/umbono
+- Google’s Africa Investment Fund investment in Series C - Moniepoin
+- NCAIR-Google AI Fund: Nigeria investments
+- Alibaba?
 
 
+# Sectors?
+
+# When are cloud companies releasing “free” / open source to build their market? 
