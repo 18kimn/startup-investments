@@ -1,0 +1,103 @@
+---
+title: "startup investments"
+output: github_document
+date: "2025-05-18"
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(knitr)
+opts_chunk$set(echo = FALSE, message = FALSE)
+```
+
+```{r import}
+investors <- read_csv("data/investors.csv")
+investments <- read_csv("data/investments.csv")
+funding_rounds <- read_csv("data/funding_rounds.csv")
+orgs <- read_csv("data/organizations.csv")
+```
+
+
+
+```{r find_cloud_giants}
+
+# Eventually this should be made into a static/hard-coded table
+# But my guess is that false positives like "Banca da Amazonia" don't really
+# amount to anything, so it can be a thing done later 
+clouds <- investors |> 
+  mutate(cloud_giant = case_when(
+    str_detect(name, "Google|Alphabet") ~ "Google",
+    str_detect(name, "Microsoft") | name == "Azure" ~ "Microsoft", # lots of random "azure" ones, should dig in later to find out which are actually msft
+    str_detect(name, "Amazon|AWS") ~ "Amazon",
+    T ~ NA_character_
+  )) |> 
+  drop_na(cloud_giant)
+
+alt_filter_clouds <- investors |> 
+  mutate(cloud_giant = str_detect(name, "Google|Microsoft|Amazon")) |> 
+  filter(cloud_giant)
+
+cloud_investments <- investments |> 
+  inner_join(
+    select(clouds, uuid, cloud_giant),
+    by = c("investor_uuid" = "uuid")
+    ) |> 
+  left_join(
+    select(funding_rounds, uuid, raised_amount, investor_count, investment_type, announced_on),
+    by = c("funding_round_uuid" = "uuid"))
+
+alt_cloud_investments <- investments |> 
+  inner_join(
+    select(alt_filter_clouds, uuid, cloud_giant),
+    by = c("investor_uuid" = "uuid")
+    )
+
+# Pretty informative
+mismatches <- cloud_investments |> 
+  filter(!(name %in% alt_cloud_investments$name)) |> 
+  count(investor_name) |> 
+  arrange(desc(n))
+```
+
+# Summary stats
+
+```{r}
+
+tribble(
+  ~Statistic, ~Value,
+  "# of investments", nrow(investments),
+  "# of unique funding rounds", nrow(funding_rounds),
+  "# of investors", nrow(investors),
+  "# of companies receiving investment", nrow(orgs),
+  "Median investors in a given funding round", 
+) |> 
+  kable(caption = "Top-level summary statistics ")
+
+```
+
+```{r}
+
+cloud_investments |> 
+  group_split(cloud_giant) |> 
+  map(\(cloud_corp){
+    cloud_giant_name <- unique(cloud_corp$cloud_giant)
+    tribble(
+      ~Statistic, ~Value,
+      "Total number of deals", nrow(cloud_corp),
+      "Total dollar amount of participated deals (including other investors)", sum(cloud_corp$raised_amount, na.rm=T),
+      "Number of investing aliases", length(unique(cloud_corp$investor_name)),
+      # "Most popular stage of investment", sort(table(cloud_corp$investment_type), descending = T)[1] |>  names(), # shitty way to do that lol
+      'Proportion of time that they “lead” funding rounds', sum(cloud_corp$is_lead_investor)/length(cloud_corp$is_lead_investor),
+      "Median size of participating deal", median(cloud_corp$raised_amount, na.rm=T),
+      "Proportion of deals involving AI (operationalize)", NaN,
+      "Proportion of deals investing into cloud infra", NaN
+    ) |> 
+      rename(!!cloud_giant_name := Value)
+  }) |> 
+  reduce(left_join, by = "Statistic") |> 
+  kable(caption = "Summary statistics by cloud corp")
+
+```
+
+
+
