@@ -1,6 +1,8 @@
 ---
 title: "startup investments"
-output: github_document
+output:
+  github_document: 
+    toc: true
 date: "2025-05-18"
 ---
 
@@ -8,6 +10,7 @@ date: "2025-05-18"
 library(tidyverse)
 library(knitr)
 library(showtext)
+library(viridis)
 opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 7)
 
@@ -30,11 +33,17 @@ country_scale <- c(
 ```
 
 ```{r import}
-# lazy=TRUE here 
+# lazy=TRUE here makes readr uses the `vroom` style of processing only the parts of 
+# datasets accessed by later code, which can offer significant performance enhancements
 options(readr.read_lazy = TRUE)
 investors <- read_csv("data/investors.csv")
 investments <- read_csv("data/investments.csv")
 funding_rounds <- read_csv("data/funding_rounds.csv")
+funding_round_participants <- funding_rounds |> 
+  select(uuid, investor_count) |> 
+  left_join(select(investments, funding_round_uuid, investor_uuid), by = c("uuid" = "funding_round_uuid")) |> 
+  group_by(uuid, investor_count) |> 
+  summarize(investor_uuids = list(investor_uuid))
 orgs <- read_csv("data/organizations.csv")
 ```
 
@@ -64,7 +73,12 @@ cloud_investments <- investments |>
     ) |> 
   left_join(
     select(funding_rounds, uuid, raised_amount, investor_count, investment_type, announced_on, org_uuid),
-    by = c("funding_round_uuid" = "uuid"))
+    by = c("funding_round_uuid" = "uuid")) |> 
+  mutate(is_lead_investor = case_when(
+    !is.na(is_lead_investor) ~ is_lead_investor,
+    investor_count == 1 ~ TRUE,
+    T ~ NA
+  ))
 
 alt_cloud_investments <- investments |> 
   inner_join(
@@ -83,6 +97,13 @@ cloud_orgs <- cloud_investments |>
   distinct() |> 
   left_join(orgs, by = c("org_uuid" = "uuid"))
 
+```
+
+# At a glance
+
+## Aliases
+
+```{r}
 cloud_investments |>
   group_by(cloud_giant, investor_name) |> 
   count() |> 
@@ -92,10 +113,9 @@ cloud_investments |>
   rename("Cloud corp" = cloud_giant,
          "Aliases (# deals)" = aliases) |> 
   kable()
-  
 ```
 
-# Summary stats
+## Summary stats
 
 ```{r}
 
@@ -133,10 +153,9 @@ cloud_investments |>
       "Number of investing aliases", length(unique(cloud_corp$investor_name)),
       # "Most popular stage of investment", sort(table(cloud_corp$investment_type), descending = T)[1] |>  names(), # shitty way to do that lol
       '% of time that they “lead” funding rounds', 100*sum(cloud_corp$is_lead_investor, na.rm=T)/length(cloud_corp$is_lead_investor),
+      '% of time that they are the sole investor', 100*sum(cloud_corp$investor_count == 1, na.rm=T)/length(cloud_corp$is_lead_investor),
       "Median size of participating deal", median(cloud_corp$raised_amount, na.rm=T)/1e6,
-      "Companies receiving investment", length(unique(cloud_corp$org_uuid)),
-      "Proportion of deals involving AI (operationalize)", NaN,
-      "Proportion of deals investing into cloud infra", NaN
+      "Companies receiving investment", length(unique(cloud_corp$org_uuid))
     ) |> 
       mutate(Value = format(round(Value, 1), nsmall=1, big.mark=",")) |> 
       rename(!!cloud_giant_name := Value)
@@ -146,34 +165,152 @@ cloud_investments |>
 
 ```
 
-# High-level trends
+
+## Largest investments
+
+These are outliers, generally -- 
+
+```{r}
+cloud_investments |> 
+  select(name, investor_name, announced_on, raised_amount) |> 
+  slice_max(order_by = raised_amount, n = 10) |> 
+  arrange(desc(raised_amount)) |> 
+  kable()
+
+```
+
+# Investment partners
+
+Who are the cloud companies most often partnering with?
+
+For first pass, plucked out top 20 co-investors for each of the big three. Table below has 43 rows because of the overlaps. Honestly not that informative or shocking -- 
+
+- coinvestors are pretty spread out, there are some repeated partners but big three
+  mostly invest by themselves and not with a single investment partner
+- And they share _some_ partners but not a ton -- maybe that can be exploited to show theyre investing in different things
+- Google invests sometimes with MSFT and Amazon, but not a whole lot?
+
+```{r}
+
+coinvestors <- cloud_investments |> 
+  select(cloud_giant, funding_round_uuid) |> 
+  left_join(funding_round_participants, by = c("funding_round_uuid" = "uuid")) |> 
+  unnest(cols = investor_uuids) |> 
+  group_by(cloud_giant, investor_uuids) |> 
+  count(name = "n_deals") |> 
+  group_by(cloud_giant) |> 
+  mutate(pct_deals = round(100 * n_deals / n(), 2)) |> 
+  left_join(select(investors, uuid, name), by = c("investor_uuids" = "uuid")) |> 
+  # anti-join to filter out 
+  anti_join(select(clouds, cloud_giant, name),
+            by = c("cloud_giant", "name")) |> 
+  arrange(desc(pct_deals)) |> 
+  slice_max(order_by = pct_deals, n = 20, with_ties = FALSE) |> 
+  mutate(deals = paste0(n_deals, " (", pct_deals, "%)"))
+
+coinvestors |> 
+  select(-investor_uuids, -n_deals, -pct_deals) |> 
+  pivot_wider(names_from=cloud_giant, values_from=deals) |> 
+  mutate(across(where(is.character), ~ifelse(is.na(.), "", .))) |> 
+  kable()
+```
+
+
+```{r coinvestor_heat_map, fig.height = 10}
+
+ggplot(coinvestors, aes(x = cloud_giant, y = name, fill = pct_deals)) + 
+  geom_tile() + 
+  scale_fill_viridis(option = "B") + 
+  labs(y = NULL, x = NULL, fill = "% of deals made\nwith coinvestor", 
+       title = "Heatmap of co-investment by Big Three",
+       subtitle = "It looks splotchy because of only a moderate amount of overlap")
+
+```
+
+# Sectoral analysis
+
+## When are cloud companies releasing “free” / open source to build their market? 
 
 ## AI vs Non-AI
+
+By # of deals:
+
+```{r}
+cloud_ai <- cloud_orgs |> 
+  mutate(is_ai = str_detect(category_groups_list, "Artificial Intelligence")) |> 
+  select(org_uuid, is_ai)
+  
+cloud_investments |> 
+  left_join(cloud_ai, by = "org_uuid") |> 
+  drop_na(is_ai) |> 
+  mutate(date = floor_date(announced_on, "3 months")) |> 
+         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
+  group_by(date, is_ai, cloud_giant) |> 
+  count() |> 
+  ggplot(aes(x = date, y = n, linetype = is_ai, color = cloud_giant)) + 
+  geom_line()
+
+```
+
+
+```{r}
+  
+cloud_investments |> 
+  left_join(cloud_ai, by = "org_uuid") |> 
+  drop_na(is_ai) |> 
+  mutate(date = floor_date(announced_on, "3 months")) |> 
+         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
+  group_by(date, is_ai, cloud_giant) |> 
+  summarize(total_amt = sum(raised_amount, na.rm=T)) |> 
+  ggplot(aes(x = date, y = total_amt, linetype = is_ai, color = cloud_giant)) + 
+  geom_line() + 
+  scale_y_continuous(labels = \(x){paste0("$", format(x/1e6, nsmall=1, big.mark = ",", scientific = FALSE))})
+
+```
+
+
+```{r}
+
+  
+cloud_investments |> 
+  left_join(cloud_ai, by = "org_uuid") |> 
+  drop_na(is_ai) |> 
+  mutate(date = floor_date(announced_on, "3 months")) |> 
+         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
+  group_by(date, is_ai, cloud_giant) |> 
+  summarize(total_amt = sum(raised_amount, na.rm=T)) |> 
+  ggplot(aes(x = date, y = total_amt, linetype = is_ai, color = cloud_giant)) + 
+  geom_line() + 
+  scale_y_continuous(labels = \(x){paste0("$", format(x/1e6, nsmall=1, big.mark = ",", scientific = FALSE))}, limits = c(0, 100000000000)) + 
+  scale_x_date(limits = c(as.Date("2014-01-01"), as.Date("2026-01-01")))
+
+```
+## GovTech
+
+What kind of govtech firms to Big Cloud invest in?
+
+## Cloud vs Non-Cloud
+
+Compare cloud companies investment strategies to “non-cloud” tech, eg Meta/Apple, or edge, eg Intel
+
+# Impacts of investment
 
 ## "Ouroboros" of Cloud
 
 When is Big Cloud are investing in other companies that do cloud infra (Kubernetes)?
 
-# Dependence of investment receivers on Big Cloud
+## Dependence of investment receivers on Big Cloud
 
 Can we measure when one Big Cloud co has invested a large amount of company’s investment total?
 
 (how can we operationalize this given the dataset? Similar to lead/secondary question?)
 
-# GovTech
-
-What kind of govtech firms to Big Cloud invest in?
-
-# Cloud vs Non-Cloud
-
-Compare cloud companies investment strategies to “non-cloud” tech, eg Meta/Apple, or edge, eg Intel
+## Lead/ secondary: Can we quantify/ describe the difference in target firm when Big Cloud Lead investor vs secondary investor?
 
 # Changes over time
 
 When does Amazon become a cloud company? What about the others? Is there some “natural” progression?
 What external data will we need?
-
-# Lead/ secondary: Can we quantify/ describe the difference in target firm when Big Cloud Lead investor vs secondary investor?
 
 # Depending on kind of funding round? Can we test if VC deals are diff than others? Or if amounts are generally bigger when the Big Three invest or lead?
 
@@ -220,6 +357,3 @@ There seems to be Third World development / investment arms maintained by the bi
 - Alibaba?
 
 
-# Sectors?
-
-# When are cloud companies releasing “free” / open source to build their market? 
