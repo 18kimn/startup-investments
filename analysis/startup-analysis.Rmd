@@ -6,11 +6,26 @@ output:
 date: "2025-05-18"
 ---
 
+# Preamble/setup
+
 ```{r setup, include=FALSE, message=FALSE}
 library(tidyverse)
 library(knitr)
 library(showtext)
 library(viridis)
+library(rnaturalearthdata)
+library(sf)
+knitr::knit_hooks$set(time_it = local({
+  now <- NULL
+  function(before, options) {
+    if (before) {
+      now <<- Sys.time()
+    } else {
+      res <- difftime(Sys.time(), now, units = "secs")
+     paste("Time for the chunk", options$label, "to run:", res)
+    }
+  }
+}))
 opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE, fig.width = 10, fig.height = 7)
 
@@ -21,16 +36,20 @@ custom_theme <- function(...){
   theme_bw() + 
     theme(
       text = element_text(family = "Lato", size = 14),
+      title = element_text(face = "bold"),
+      strip.text = element_text(face = "bold"),
+      plot.caption = element_text(face = "plain"),
       ...
     )
 }
-
 theme_set(custom_theme())
-country_scale <- c(
-  "US" = "#377EB8",
-  "Canada" = "#E41A1C"
+
+options(
+  ggplot2.discrete.fill = function(...) scale_fill_brewer(palette = "Set1", ...),
+  ggplot2.discrete.colour = function(...) scale_colour_brewer(palette = "Set1", ...)
 )
-format_mil <- \(x){format(x/1e6, nsmall=1, big.mark = ",", scientific = FALSE, drop0trailing=T, zero.print=F)}
+
+format_mil <- \(x){format(round(x/1e6, 2), trim=TRUE, nsmall=1, big.mark = ",", scientific = FALSE, drop0trailing=T, zero.print=F)}
 print_num <- \(x){format(round(x, 2), big.mark = ",",drop0trailing = T, zero.print=F)}
 ```
 
@@ -40,6 +59,8 @@ print_num <- \(x){format(round(x, 2), big.mark = ",",drop0trailing = T, zero.pri
 options(readr.read_lazy = TRUE)
 investors <- read_csv("data/investors.csv")
 investments <- read_csv("data/investments.csv")
+acquisitions <- read_csv("data/acquisitions.csv")
+ipos <- read_csv("data/ipos.csv")
 funding_rounds <- read_csv("data/funding_rounds.csv")
 funding_round_participants <- funding_rounds |> 
   select(uuid, investor_count) |> 
@@ -48,10 +69,10 @@ funding_round_participants <- funding_rounds |>
   group_by(uuid) |> 
   summarize(investor_uuids = list(investor_uuid),
             investor_names = list(investor_name))
+funding_rounds <- left_join(
+  funding_rounds, funding_round_participants, 
+  by = "uuid")
 orgs <- read_csv("data/organizations.csv")
-```
-
-```{r find_cloud_giants}
 
 # Eventually this should be made into a static/hard-coded table
 # But my guess is that false positives like "Banca da Amazonia" don't really
@@ -64,11 +85,6 @@ clouds <- investors |>
     T ~ NA_character_
   )) |> 
   drop_na(cloud_giant)
-
-# What do we get if we just search for the terms google/microsoft/amazon
-alt_filter_clouds <- investors |> 
-  mutate(cloud_giant = str_detect(name, "Google|Microsoft|Amazon")) |> 
-  filter(cloud_giant)
 
 cloud_investments <- investments |> 
   inner_join(
@@ -84,60 +100,11 @@ cloud_investments <- investments |>
     T ~ NA
   ))
 
-alt_cloud_investments <- investments |> 
-  inner_join(
-    select(alt_filter_clouds, uuid, cloud_giant),
-    by = c("investor_uuid" = "uuid")
-    )
-
-# Pretty informative
-mismatches <- cloud_investments |> 
-  filter(!(name %in% alt_cloud_investments$name)) |> 
-  count(investor_name) |> 
-  arrange(desc(n))
-
 cloud_orgs <- cloud_investments |> 
   select(cloud_giant, investor_name, org_uuid) |> 
   distinct() |> 
   left_join(orgs, by = c("org_uuid" = "uuid"))
 
-```
-
-# At a glance
-
-## Aliases
-
-```{r}
-cloud_investments |>
-  group_by(cloud_giant, investor_name) |> 
-  count() |> 
-  group_by(cloud_giant) |> 
-  arrange(n) |> 
-  summarize(aliases = paste0(investor_name, " (", n, ") ", collapse = ", ")) |> 
-  rename("Cloud corp" = cloud_giant,
-         "Aliases (# deals)" = aliases) |> 
-  kable()
-```
-
-## Summary stats
-
-```{r}
-
-tribble(
-  ~Statistic, ~Value,
-  "# of investments", nrow(investments),
-  "# of unique funding rounds", nrow(funding_rounds),
-  "# of investors", nrow(investors),
-  "# of companies receiving investment", nrow(orgs),
-  "Median investors in a given funding round", median(funding_rounds$investor_count, na.rm=T)
-) |> 
-  kable(caption = "Top-level summary statistics of full dataset")
-
-```
-
-## Important investors to compare against
-
-```{r baseline}
 
 active_vcs <- investors |> 
   filter(str_detect(investor_types, "venture_capital")) |> 
@@ -170,30 +137,818 @@ big_vcs <- investors |>
 
 # or manga or whatever the fuck
 # Should refine to get sub-companies
-faang <- investors |> 
-  filter(name %in% c("Meta", "Apple", "NVIDIA")) |> 
-  mutate(criteria = "Other FAANG")
+mag_seven <- investors |> 
+  filter(name %in% c("Meta", "Apple", "NVIDIA", "Tesla")) |> 
+  mutate(criteria = "Other Magnificent Seven")
 
 controls <- bind_rows(
   active_accels,
   big_vcs, 
-  faang, 
+  mag_seven, 
 ) |> 
   select(name, criteria, investment_count, uuid)
+
+# large_corps <- orgs |> 
+#   filter(primary_role == "company") |> 
+#   select(cb_url, category_groups_list) |> 
+#   inner_join(investors, by = "cb_url") |> 
+#   filter(str_detect(roles, "company"), is.na(investor_types))
 
 control_investments <- investments |> 
   inner_join(select(controls, "uuid", criteria), by = c("investor_uuid" = "uuid")) |> 
   left_join(select(funding_rounds, uuid, raised_amount_usd, investor_count, investment_type, org_uuid, announced_on),
                 by = c("funding_round_uuid" = "uuid"))
 
+comparisons <- investors |> 
+  select(uuid) |> 
+  mutate(criteria = "All investors") |> 
+  bind_rows(
+    select(clouds, uuid, criteria = cloud_giant),
+    select(controls, uuid, criteria)
+  ) |> 
+  mutate(criteria = fct_relevel(criteria, "Google", "Microsoft", "Amazon", "Other Magnificent Seven", "Big VC", "Active Accelerator", "All investors"),
+         # Useful to treat all google investments, etc as coming from one entity
+         corp_id = case_when(
+           criteria %in% c("Google", "Amazon", "Microsoft") ~ criteria,
+           T ~ uuid
+         )) |> 
+  rename(investor_uuid = uuid)
+
+```
+
+# Figure 1: Big Cloud invests a lot compared to other important investors
+
+```{r fig_1}
+
+comparisons |> 
+  left_join(investments, by = "investor_uuid") |> 
+  group_by(criteria) |> 
+  summarize(n_investments_per_firm = n()/length(unique(corp_id))) |> 
+  ggplot(aes(x = fct_relabel(criteria, ~str_wrap(., 10)), y = n_investments_per_firm)) + 
+  geom_bar(stat = "identity", fill = RColorBrewer::brewer.pal(3, "Set1")[2]) +
+  labs(
+    x = NULL, y = "Number of investments per firm",
+    caption = "`Per firm` is the number of investments in a given group divided by the number of corporate\n entities in that group. Google, Amazon, and Microsoft have all of their corporate aliases\ntreated as the same group, but the same was not performed for Meta, Netflix, Nvidia, etc." |> str_wrap(80),
+    title = "Big Cloud invests way more than other important investors"
+  ) 
+
+```
+
+# Figure 1.5: Big Cloud invests more in <x stage> more than others
+
+```{r fig_1b}
+types_levels <- c(
+  "grant",
+  "product_crowdfunding",
+  "equity_crowdfunding",
+  "pre_seed",
+  "seed",
+  "non_equity_assistance", 
+  "angel", 
+  "convertible_note",
+  "series_a",
+  "series_b",
+  "series_c",
+  "series_d",
+  "series_e",
+  "series_f",
+  "series_g",
+  "series_h",
+  "series_i",
+  "series_j",
+  "initial_coin_offering",
+  "post_ipo_equity",
+  "post_ipo_secondary",
+  "post_ipo_debt",
+  "corporate_round",
+  "private_equity",
+  "debt_financing", 
+  "series_unknown",
+  "undisclosed",
+  "secondary_market"
+)
+
+stage_list <- list(
+  "Seed, pre-seed, and grants" = c("seed", "pre_seed", "grant", "angel", "non_equity_assistance"),
+  "Early-stage" = c("series_a", "series_b", "convertible_note"),
+  "Later-stage" = c("series_c", "series_d", "series_e", "series_f", "series_g", "series_h", "series_i", "series_j"),
+  "Post-IPO/ICO and corporate rounds" = c("post_ipo_equity", "post_ipo_secondary", "post_ipo_debt", "corporate_round", "private_equity", "non_equity_assistance", "debt_financing", "initial_coin_offering"),
+  "Other" = c(
+    "undisclosed", "series_unknown", "secondary_market", ""
+  )
+) 
+stages <- tibble(stage_list) |> 
+  mutate(stages = fct(names(stage_list), levels = names(stage_list)) |> 
+           fct_relabel(~str_wrap(., 10))) |> 
+  rename(investment_type = stage_list) |> 
+  unnest(investment_type)
+
+comparisons |> 
+  left_join(investments, by = "investor_uuid") |> 
+  left_join(select(funding_rounds, uuid, investment_type), by = c("funding_round_uuid" = "uuid")) |> 
+  mutate(investment_type = fct(investment_type, levels = types_levels)) |> 
+  left_join(stages, by = "investment_type") |> 
+  drop_na(stages) |> 
+  group_by(criteria, stages) |> 
+  summarize(n_investments_per_firm = n()/length(unique(corp_id))) |> 
+  ggplot(aes(x = fct_relabel(criteria, ~str_wrap(., 10)), fill = stages, y = n_investments_per_firm)) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  labs(
+    x = NULL, y = "Number of investments per firm",
+    fill = NULL,
+    caption = "`Per firm` is the number of investments in a given group divided by the number of corporate\n entities in that group. Google, Amazon, and Microsoft have all of their corporate aliases\ntreated as the same group, but the same was not performed for Meta, Netflix, Nvidia, etc." |> str_wrap(80),
+    title = "Big Cloud invests at all stages of the startup lifecycle"
+  ) + 
+  theme(legend.key.spacing.y = unit(0.3, "cm"))
+```
+
+# Figure 2: Big Cloud is leading more deals or active as the sole investor more often
+
+```{r fig_2}
+comparisons |> 
+  left_join(investments, by = "investor_uuid") |> 
+  left_join(select(funding_rounds, uuid, org_uuid, investment_type, investor_uuids),
+            by = c("funding_round_uuid" = "uuid")) |> 
+  mutate(is_sole_investor = map_dbl(investor_uuids, ~length(.) == 1),
+         is_lead_investor = is_lead_investor | is_sole_investor) |>
+  # Have to do these merges up here because the next summarization happens by umbrella corp instead of a specific corp (like all of google as opposed to google startups or whatever)
+  left_join(select(acquisitions, acquirer_uuid, acquiree_uuid) |> 
+              distinct() |> 
+              mutate(was_acquired = TRUE),
+            by = c("investor_uuid" = "acquirer_uuid", "org_uuid" = "acquiree_uuid")) |> 
+  left_join(select(ipos, "org_uuid") |> 
+              # some have IPOs more than once, like on different stock exchanges or as a result of acquisitions
+              distinct() |> 
+              mutate(had_ipo = TRUE),
+            by = "org_uuid") |> 
+  # Ugh have to summarize thtwo  times -- once to our corp IDs, once to big criteria groups
+  # to accurately track company-level metrics like repeat investments, acquisitions, IPOs
+  group_by(criteria, corp_id, org_uuid) |> 
+  summarize(
+    is_sole_investor = sum(is_sole_investor, na.rm=T),
+    is_lead_investor = sum(is_lead_investor, na.rm=T),
+    repeat_investments = n() > 1,
+    was_acquired = any(was_acquired),
+    had_ipo = any(had_ipo)
+  ) |> 
+  group_by(criteria) |> 
+  summarize(
+    "% sole investor" = sum(is_sole_investor, na.rm=T)/n(),
+    "% lead investor" = sum(is_lead_investor, na.rm=T)/n(),
+    "% repeat investment" = sum(repeat_investments, na.rm=T)/n(),
+    # "% acquired" = sum(was_acquired, na.rm=T)/n()
+    "% IPO" = sum(had_ipo, na.rm=T)/n()
+  ) |> 
+  pivot_longer(cols = contains("%")) |> 
+  ggplot(aes(x = fct_relabel(criteria, ~str_wrap(., 10)), fill = name, y = value)) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  labs(
+    x = NULL, y = NULL,
+    fill = NULL,
+    caption = "Sole investor or lead investor statuses are taken per investment, while repeat investments, acquisitions, or IPOs are assessed for individual companies." |> str_wrap(80)
+  ) + 
+  theme(legend.key.spacing.y = unit(0.3, "cm"))
+```
+
+# Figure 2.5: Co-invested companies are more often in AI
+
+```{r top_sectors_overall}
+top_sectors <- cloud_orgs |> 
+  select(category_list) |> 
+  mutate(category_list = str_split(category_list, ",")) |> 
+  unnest(category_list) |> 
+  drop_na(category_list) |> 
+  count(category_list) |> 
+  filter(!(category_list %in% c("Software", "Information Technology"))) |> 
+  slice_max(order_by = n, n = 10)
+```
+
+
+```{r coinvestor_heat_map, fig.height = 10}
+
+coinvestors <- cloud_investments |> 
+  select(cloud_giant, funding_round_uuid) |> 
+  left_join(funding_round_participants, by = c("funding_round_uuid" = "uuid")) |> 
+  unnest(cols = investor_uuids) |> 
+  group_by(cloud_giant, investor_uuids) |> 
+  count(name = "n_deals") |> 
+  group_by(cloud_giant) |> 
+  mutate(pct_deals = round(100 * n_deals / n(), 2)) |> 
+  left_join(select(investors, uuid, name), by = c("investor_uuids" = "uuid")) |> 
+  # anti-join to filter out 
+  anti_join(select(clouds, cloud_giant, name),
+            by = c("cloud_giant", "name")) |> 
+  arrange(desc(pct_deals)) |> 
+  slice_max(order_by = pct_deals, n = 20, with_ties = FALSE) |> 
+  mutate(deals = paste0(n_deals, " (", pct_deals, "%)"))
+
+ggplot(coinvestors, aes(x = cloud_giant, y = name, fill = pct_deals)) + 
+  geom_tile() + 
+  scale_fill_viridis(option = "B") + 
+  labs(y = NULL, x = NULL, fill = "% of deals made\nwith coinvestor", 
+       title = "Heatmap of co-investment by Big Three",
+       subtitle = "It looks splotchy because of only a moderate amount of overlap")
+
+```
+
+# Figure 3: The Big Cloud investors find their own niches
+
+
+```{r big_cloud_sectors, fig.width = 10}
+big_cloud_top_sector <- cloud_investments |> 
+  left_join(select(cloud_orgs, org_uuid, category_list) |> distinct(), by = c("org_uuid" = "org_uuid")) |> 
+  mutate(category_list = str_split(category_list, ",")) |> 
+  unnest(category_list) |> 
+  filter(category_list %in% top_sectors$category_list) |> 
+  # mutate(date = floor_date(announced_on, "3 months")) |> 
+  group_by(cloud_giant, category_list) |> 
+  summarize(n_deals = n(),
+            amt = sum(raised_amount_usd, na.rm=T)) |> 
+  mutate(frac_deals = n_deals / sum(n_deals))
+
+
+ggplot(big_cloud_top_sector, aes(x = str_wrap(category_list, 10), y = n_deals,
+                                 fill = cloud_giant)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(
+    x = NULL, y = "Number of deals", fill = NULL
+  ) + 
+  theme(legend.position = "top")
+```
+
+```{r big_cloud_sectors_prop, fig.width = 15}
+ggplot(big_cloud_top_sector, aes(x = str_wrap(category_list, 10), y = frac_deals,
+                                 fill = cloud_giant)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(
+    x = NULL, y = "Fraction of total deals made by corporation", fill = NULL
+  ) + 
+  theme(legend.position = "top")
+```
+
+# Figure 3.2: Gov tech
+
+```{r govtech}
+govtech_list <- list(
+  "Government and Public Sector" = c(
+    "Government",
+    "GovTech",
+    "CivicTech"
+  ),
+  "Public Safety and Law Enforcement" = c(
+    "Public Safety",
+    "Law Enforcement",
+    "Corrections Facilities"
+  ),
+  "Military" = c(
+    "National Security",
+    "Homeland Security",
+    "Military"
+  ),
+  "Municipal and Public Works" = c(
+    "Waste Management",
+    "Pollution Control",
+    "Water",
+    "Recycling",
+    "Power Grid"
+  ),
+  "Transport and infra" = c(
+    "Public Transportation",
+    "Water Transportation",
+    "Railroad",
+    "Ports and Harbors"
+  ),
+  "Public Health" = c(
+    "Addiction Treatment",
+    "Homeless Shelter",
+    "Social Assistance"
+  )
+  # "Education" = c(
+  #   "Education", 
+  #   "Higher Education",
+  #   "Universities",
+  #   "Primary Education",
+  #   "Secondary Education",
+  #   "Charter Schools",
+  #   "Special Education",
+  #   "STEM Education"
+  # )
+)
+
+govtech <- tibble(govtech_list) |> 
+  mutate(govtech_categories = names(govtech_list)) |> 
+  unnest(govtech_list) |> 
+  rename(category_list = govtech_list)
+
+govtech_investments <- comparisons |> 
+  left_join(investments, by = "investor_uuid") |> 
+  group_by(criteria) |> 
+  mutate(total_criteria_deals = n()) |> 
+  ungroup() |> 
+  left_join(select(funding_rounds, uuid, org_uuid), by = c("funding_round_uuid" = "uuid")) |> 
+  left_join(select(orgs, uuid, category_list) |> distinct(), by = c("org_uuid" = "uuid")) |> 
+  mutate(category_list = str_split(category_list, ",")) |> 
+  unnest(category_list) |> 
+  right_join(govtech, by = "category_list") |> 
+  #make sure counting each funding round once per govtech category
+  select(criteria, total_criteria_deals, govtech_categories, funding_round_uuid) |> 
+  distinct() |> 
+  drop_na(criteria) |> 
+  left_join(select(funding_rounds, uuid, raised_amount_usd), by = c("funding_round_uuid" = "uuid")) |> 
+  group_by(criteria, total_criteria_deals, govtech_categories)|> 
+  summarize(n_deals = n(),
+            amt = sum(raised_amount_usd, na.rm=T)) |> 
+  mutate(frac_deals = 100 * n_deals / total_criteria_deals)
+
+ggplot(govtech_investments,
+       aes(x = str_wrap(govtech_categories, 10),
+           y = frac_deals,
+           fill = criteria)) + 
+  geom_bar(position="dodge", stat="identity") + 
+  labs(
+    x = NULL, y = "% of total deals made by investor or investor group", fill = NULL
+  ) + 
+  theme(legend.position = "top")
+```
+
+# Figure 4: Big Cloud and other major investors have taken a strong pivot to AI
+
+By # of deals:
+
+```{r cloud_ai_deals}
+cloud_ai <- cloud_orgs |> 
+  mutate(is_ai = str_detect(category_list, "Artificial Intelligence")) |> 
+  select(org_uuid, is_ai) |> 
+  distinct()
+  
+cloud_investments |> 
+  left_join(cloud_ai, by = "org_uuid") |> 
+  drop_na(is_ai) |> 
+  mutate(date = floor_date(announced_on, "3 months")) |> 
+         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
+  group_by(date, is_ai, cloud_giant) |> 
+  count() |> 
+  ggplot(aes(x = date, y = n, linetype = is_ai, color = cloud_giant)) + 
+  geom_line() +
+  scale_x_date(limits = c(as.Date("2014-01-01"), as.Date("2026-01-01")))
+
+```
+
+
+```{r cloud_ai_amt}
+  
+cloud_investments |> 
+  left_join(cloud_ai, by = "org_uuid") |> 
+  drop_na(is_ai) |> 
+  mutate(date = floor_date(announced_on, "3 months")) |> 
+         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
+  group_by(date, is_ai, cloud_giant) |> 
+  summarize(total_amt = sum(raised_amount_usd, na.rm=T)) |> 
+  ggplot(aes(x = date, y = total_amt, linetype = is_ai, color = cloud_giant)) + 
+  geom_line() + 
+  scale_y_continuous(labels = \(x){paste0("$", format(x/1e6, nsmall=1, big.mark = ",", scientific = FALSE))}) + 
+  scale_x_date(limits = c(as.Date("2014-01-01"), as.Date("2026-01-01")))
+
+```
+
+
+```{r amt_cloud}
+cloud_investments |> 
+  left_join(cloud_ai, by = "org_uuid") |> 
+  drop_na(is_ai) |> 
+  mutate(date = floor_date(announced_on, "3 months")) |> 
+         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
+  group_by(date, is_ai, cloud_giant) |> 
+  summarize(total_amt = sum(raised_amount_usd, na.rm=T)) |> 
+  ggplot(aes(x = date, y = total_amt, linetype = is_ai, color = cloud_giant)) + 
+  geom_line() + 
+  scale_y_continuous(labels = \(x){paste0("$", format(x/1e6, nsmall=1, big.mark = ",", scientific = FALSE))}, limits = c(0, 100000000000)) + 
+  scale_x_date(limits = c(as.Date("2014-01-01"), as.Date("2026-01-01")))
+
+```
+
+
+# Figure 5: Big Cloud is investing in all parts of the supply chain
+
+```{r supply_chain_cleaning}
+supply_chain <- lst(
+  "Hardware" = c(
+    "Application Specific Integrated Circuit (ASIC)",
+    "GPU",
+    "Field-Programmable Gate Array (FPGA)"
+  ),
+  "Internet Infra" = c(
+    "Wired Telecommunications",
+    "Network Hardware",
+    "Communication Hardware",
+    "ISP",
+    "Content Delivery Network",
+    "Satellite Communication",
+    "IT Infrastructure"
+  ),
+  # Research = c(
+  #   "Machine Learning",
+  #   "Artificial Intelligence (AI)",
+  #   "Generative AI",
+  #   "Natural Language Processing",
+  #   "Computer Vision"
+  # ),
+  Data = c(
+    "Big Data",
+    "Data Mining",
+    "Database",
+    "Data Integration",
+    "Geospatial"
+  ),
+  # "Responsible AI" = c(
+  #   "Compliance",
+  #   "Data Governance"
+  # ),
+  Cloud = c(
+    "Cloud Storage",
+    "Cloud Infrastructure",
+    "Cloud Computing",
+    "Data Management",
+    "Private Cloud"
+  ),
+  "As a Service" = c(
+    "SaaS", "IaaS", "PaaS", "Developer APIs"
+  ),
+  "Developer Services" = c(
+    "Network Security",
+    "Cloud Security",
+    "Network Security",
+    "DevOps",
+    "Developer Tools",
+    "Developer Platform"
+    ),
+  #"Business-facing" = c("B2B"),
+  # "Consumer-facing" = c(
+  #   "Mobile Apps", "Internet of Things", "Consumer Electronics", "Virtual Reality", "Augmented Reality"
+  #   )
+)
+
+supply_chain <- supply_chain |> 
+  tibble() |> 
+  mutate(component = names(supply_chain) |> factor(levels = names(supply_chain))) |> 
+  unnest(supply_chain)
+
+individual_comparisons <- bind_rows(
+  mutate(clouds, name = cloud_giant),
+  mag_seven, 
+  slice_head(big_vcs, n = 2)
+) |> 
+  select(name, investor_uuid = uuid) |> 
+  mutate(name = fct_relevel(name, "Google", "Microsoft", "Amazon", "Apple", "Meta", "NVIDIA", "Accel", "Sequoia Capital"))
+
+supply_chain_investments <- investments |> 
+  select(investor_uuid, funding_round_uuid, is_lead_investor) |> 
+  left_join(select(funding_rounds, uuid, org_uuid, raised_amount_usd), by = c("funding_round_uuid" = "uuid")) |> 
+  
+  left_join(select(orgs, uuid, category_list) |> distinct(), by = c("org_uuid" = "uuid")) |> 
+  right_join(individual_comparisons, by = "investor_uuid") |> 
+  mutate(category_list = str_split(category_list, ",")) |> 
+  unnest(category_list) |> 
+  full_join(supply_chain, by = c("category_list" = "supply_chain")) |> 
+  select(-category_list) |> 
+  distinct() # Since a single company could have two relevant categories from a single supply chain component
+```
+
+## 5a: # of deals in a given portion of the supply chain
+
+```{r supply_tile}
+supply_chain_investments |> 
+  drop_na(component) |> 
+  group_by(name, component) |> 
+  count() |> 
+  ggplot() + 
+  geom_tile(aes(x = name, y = component, fill = n)) + 
+  scale_fill_viridis()
+```
+
+## 5b: # of deals in given supply chain component as proportion of all deals
+
+```{r supply_tile_prop}
+supply_chain_investments |>
+  group_by(name) |> 
+  mutate(denominator = n()) |> 
+  drop_na(component) |> 
+  group_by(name, component) |> 
+  summarize(prop_deals = n()/denominator) |> 
+  ggplot() + 
+  geom_tile(aes(x = name, y = component, fill = prop_deals)) + 
+  scale_fill_viridis()
+```
+
+## 5: Total size of all participated funding rounds
+
+
+```{r size_tile}
+supply_chain_investments |>
+  filter(raised_amount_usd != 40000000000) |> 
+  group_by(name) |> 
+  mutate(denominator = sum(raised_amount_usd, na.rm=T)) |> 
+  drop_na(component) |> 
+  group_by(name, component) |> 
+  summarize(prop_deals = sum(raised_amount_usd, na.rm=T)/denominator) |> 
+  ggplot() + 
+  geom_tile(aes(x = name, y = component, fill = prop_deals)) + 
+  scale_fill_viridis() + 
+  labs(
+    fill = "Prop of raised amount in all\nparticipated rounds",
+    caption = "Excludes Microsoft's $40B deal with OpenAI"
+  )
+```
+
+## 5b: % of lead deals
+
+```{r lead_tile}
+
+supply_chain_lead_sole <- supply_chain_investments |> 
+  left_join(funding_round_participants, by = c("funding_round_uuid" = "uuid")) |> 
+  mutate(
+    is_sole_investor = map_lgl(investor_names, ~length(.) == 1),
+    is_lead_investor = is_lead_investor | is_sole_investor
+  ) |> 
+  drop_na(component) |> 
+  group_by(name, component) |> 
+  summarize(
+    is_sole_investor = sum(is_sole_investor, na.rm=T)/n(),
+    is_lead_investor = sum(is_lead_investor, na.rm=T)/n()
+    )
+
+supply_chain_lead_sole |> 
+  ggplot() + 
+  geom_tile(aes(x = name, y = component, fill = 100 * is_lead_investor)) + 
+  scale_fill_viridis() + 
+  labs(fill = "% of time lead investor", x = NULL, y = NULL,
+       title = "big cloud investment leads by sector") + 
+  theme(legend.key.height = unit(2, "cm"))
+```
+
+## 5c: % of sole investor
+
+```{r sole_tile}
+supply_chain_lead_sole |> 
+  ggplot() + 
+  geom_tile(aes(x = name, y = component, fill = is_sole_investor)) + 
+  scale_fill_viridis()
+```
+
+
+## 5d: % of repeat investor
+
+# Figure 6: Big cloud has especially salient interests in X regions
+
+```{r cloud_regions}
+
+data(countries)
+country_shapes <- countries50 |>
+  filter(region_wb != "Antarctica") |> 
+  select(region_wb, country_name = name,iso_a3)
+
+cloud_investments |> 
+  left_join(select(funding_rounds, country_code, uuid), by = c("funding_round_uuid" = "uuid")) |> 
+  left_join(st_drop_geometry(country_shapes), by = c("country_code" = "iso_a3")) |> 
+  group_by(country_code) |> 
+  count() |> 
+  full_join(select(country_shapes, iso_a3), by = c("country_code" = "iso_a3")) |> 
+  mutate(n = case_when(
+    country_code == "USA" ~ NaN,
+    is.na(n) ~ 0,
+    T ~ n)) |> 
+  st_as_sf() |> 
+  ggplot(aes(fill = n)) + 
+  geom_sf() + 
+  scale_fill_viridis() +
+  labs(title = "Number of deals in a given country")
+```
+
+```{r cloud_region_map}
+investments |> 
+  left_join(select(funding_rounds, country_code, uuid), by = c("funding_round_uuid" = "uuid")) |> 
+  left_join(st_drop_geometry(country_shapes), by = c("country_code" = "iso_a3")) |> 
+  group_by(country_code) |> 
+  count() |> 
+  full_join(select(country_shapes, iso_a3), by = c("country_code" = "iso_a3")) |> 
+  mutate(n = case_when(
+    country_code == "USA" ~ NaN,
+    is.na(n) ~ 0,
+    T ~ n)) |> 
+  st_as_sf() |> 
+  ggplot(aes(fill = n)) + 
+  geom_sf() + 
+  scale_fill_viridis()
+```
+
+```{r cloud_region_bar, fig.width = 12}
+
+top_countries <- funding_rounds |> 
+  filter(country_code != "USA") |> 
+  group_by(country_code) |> 
+  summarize(raised_amount_usd = sum(raised_amount_usd, na.rm=T)) |> 
+  slice_max(order_by = raised_amount_usd, n = 15) |> 
+  select(-raised_amount_usd)
+
+comparisons |> 
+  left_join(investments, by = "investor_uuid") |> 
+  filter(!(criteria %in% c(
+    "Active Accelerator", "Big VC"
+  ))) |> 
+  group_by(criteria) |> 
+  mutate(total_n = n()) |> 
+  left_join(select(funding_rounds, country_code, uuid), by = c("funding_round_uuid" = "uuid")) |> 
+  left_join(st_drop_geometry(country_shapes), by = c("country_code" = "iso_a3")) |> 
+  filter(country_code %in% top_countries$country_code) |> 
+  drop_na(country_name) |> 
+  group_by(country_name, criteria) |> 
+  summarize(prop_n = n() / total_n) |> 
+  ggplot(aes(x = fct_reorder(country_name, prop_n) |>
+               fct_relabel(~str_wrap(., 10)),
+             fill = criteria, y = 100 * prop_n)) + 
+  geom_bar(position = "dodge", stat = "identity") + 
+  theme(legend.position = "bottom") + 
+  labs(
+    x = NULL, y = "Percent of deals within group",
+    title = "Each member of the Big Cloud has distinct preferences for countries"
+  )
+
+```
+
+
+There seems to be Third World development / investment arms maintained by the big 3 cloud:
+
+- https://www.crunchbase.com/organization/umbono
+- Google’s Africa Investment Fund investment in Series C - Moniepoin
+- NCAIR-Google AI Fund: Nigeria investments
+- Alibaba?
+
+# Figure 7: The Big 3 clouds have different regional preferences (3 maps, one per cloud company)
+
+```{r region_big_cloud_map, fig.width = 10}
+
+country_cloud <- expand_grid(
+  iso_a3 = country_shapes$iso_a3,
+  cloud_giant = unique(clouds$cloud_giant)
+)
+
+cloud_investments |> 
+  left_join(select(funding_rounds, country_code, uuid), by = c("funding_round_uuid" = "uuid")) |> 
+  left_join(st_drop_geometry(country_shapes), by = c("country_code" = "iso_a3")) |> 
+  group_by(cloud_giant) |> 
+  mutate(total_n = n()) |> 
+  group_by(cloud_giant, total_n, country_code) |> 
+  summarize(prop_n = n()) |> 
+  mutate(prop_n = prop_n / total_n) |> 
+  # To ensure even if a cloud giant made 0 deals to a country it's still mapped
+  full_join(country_cloud, by = c("cloud_giant", "country_code" = "iso_a3")) |> 
+  full_join(select(country_shapes, iso_a3), by = c("country_code" = "iso_a3")) |> 
+  drop_na(cloud_giant) |> 
+  mutate(prop_n = case_when(
+    country_code == "USA" ~ NaN,
+    is.na(prop_n) ~ 0,
+    T ~ prop_n)) |> 
+  st_as_sf() |> 
+  ggplot(aes(fill = prop_n)) + 
+  geom_sf() + 
+  scale_fill_viridis() + 
+  facet_wrap(~cloud_giant, ncol = 1) + 
+  labs(
+    fill = "Prop. of all deals\nmade by corporation"
+  ) +
+  theme(axis.ticks = element_blank(),
+        axis.text = element_blank(), 
+        axis.line = element_blank())
+
+```
+
+# Figure 8:  Over time, each Big Cloud invests moreso into certain regions (line graph)
+
+Something wrong with this graph -- doesn't make sense to display for the moment. 
+
+```{r region_time, eval = F}
+comparisons |> 
+  mutate(criteria = case_when(
+    criteria %in% c("Google", "Amazon", "Microsoft") ~ "Big Cloud",
+    T ~ criteria)) |> 
+  full_join(expand_grid(
+    criteria = unique(comparisons$criteria),
+    year = 2015:2024
+  ), by = "criteria") |> 
+  filter(!(criteria %in% c("Active Accelerator", "Big VC"))) |> 
+  left_join(investments, by = "investor_uuid") |> 
+  select(criteria, funding_round_uuid) |> 
+  left_join(
+    select(funding_rounds, uuid, org_uuid,
+           announced_on, country_code, raised_amount_usd),
+            by = c("funding_round_uuid" = "uuid")) |> 
+  filter(country_code != "USA", year(announced_on) != 2025) |> 
+  left_join(country_shapes, by = c("country_code" = "iso_a3")) |> 
+  mutate(date = floor_date(announced_on, "1 year")) |> 
+  drop_na(region_wb) |> 
+  group_by(criteria, region_wb, date) |> 
+  summarize(raised_amount_usd = sum(raised_amount_usd, na.rm=T)/n()) |> 
+  ggplot(aes(x = date, y = raised_amount_usd, color = region_wb)) + 
+  geom_line(size = 1) +
+  scale_y_log10(labels = \(x){paste0("$", format_mil(x))}) + 
+  scale_x_date(limits = c(as.Date("2010-01-01"), as.Date("2024-01-01")), 
+               expand = expansion(add = 0),
+               date_breaks = "1 year",
+               date_labels = "%Y") + 
+  theme(legend.position = "bottom") + 
+  labs(
+    x = NULL, y = "Total raised amount", color = NULL,
+    title = "Investment internationally trends upwards over time"
+    ) + 
+  facet_wrap(~criteria, ncol = 1)
+
+```
+
+
+# Table: Big Cloud has especially salient interests in X regions
+
+```{r cloud_region_table}
+cloud_orgs |> 
+  group_split(cloud_giant) |> 
+  map(\(corp_group){
+    total_n <- length(unique(corp_group$org_uuid))
+    cloud_giant_name <- unique(corp_group$cloud_giant)
+    top_ten <- corp_group |> 
+      count(country_code) |> 
+      slice_max(order_by = n, n = 10)
+    all_others <- corp_group |> 
+      filter(!(country_code %in% top_ten$country_code)) |> 
+      count() |> 
+      mutate(country_code = "All others for this cloud corp")
+    bind_rows(top_ten, all_others) |> 
+      mutate(n = paste0(n, " (", round(100*n/total_n, 2), "%)")) |> 
+      rename(!!cloud_giant_name := n)
+  }) |> 
+  reduce(full_join, by = "country_code") |> 
+  kable(caption = "Summary statistics by cloud corp")
+
+```
+
+# Table of investments by top sectors
+
+```{r sector_table}
+
+cloud_sectors <- cloud_investments |> 
+  left_join(select(cloud_orgs, org_uuid, category_list) |> distinct(),
+            by = c("org_uuid" = "org_uuid")) |> 
+  mutate(category_list = str_split(category_list, ",")) |> 
+  unnest(category_list) |> 
+  filter(category_list %in% top_sectors$category_list) |> 
+  group_by(cloud_giant, category_list) |> 
+  summarize(n_deals = n(), amt = sum(raised_amount_usd, na.rm=T))
+  
+  
+cloud_sectors |> 
+  mutate(stat = paste0(n_deals, " ($", amt |> round(3) |> format_mil(), ")")) |> 
+  select(-n_deals, -amt) |> 
+  pivot_wider(names_from = cloud_giant, values_from = stat) |> 
+  kable()
+  
+```
+
+# Table: Coinvesting investors
+
+```{r coinvestors_table}
+
+
+coinvestors |> 
+  select(-investor_uuids, -n_deals, -pct_deals) |> 
+  pivot_wider(names_from=cloud_giant, values_from=deals) |> 
+  mutate(across(where(is.character), ~ifelse(is.na(.), "", .))) |> 
+  kable()
+```
+
+# Appendix: Aliases of cloud companies
+
+```{r aliases}
+
+cloud_investments |>
+  group_by(cloud_giant, investor_name) |> 
+  count() |> 
+  group_by(cloud_giant) |> 
+  arrange(n) |> 
+  summarize(aliases = paste0(investor_name, " (", n, ") ", collapse = ", ")) |> 
+  rename("Cloud corp" = cloud_giant,
+         "Aliases (# deals)" = aliases) |> 
+  kable()
+
+```
+
+# Appendix: Important investors to compare against
+
+```{r baseline}
 controls |> 
   select(-uuid) |> 
   kable()
 ```
 
-The table below is a bit messy conceptually because it's processing the same funding round multiple times often.
 
-```{r}
+```{r summary_stats, eval = FALSE, time_it = FALSE}
 
 # convoluted but couldn't think of another way lol 
 cloud_investments |> 
@@ -247,34 +1002,39 @@ cloud_investments |>
 
 ```
 
-## Comparing FAANG Open source and AI investments
+# Appendix: Table of investment counts by series and investor group
 
-```{r}
+```{r series_table}
 
-faang_osi_ai <- control_investments |>
-  filter(criteria == "Other FAANG") |> 
-  mutate(cloud_giant = investor_name) |> 
-  bind_rows(cloud_investments) |> 
-  select(cloud_giant, org_uuid) |> 
-  distinct() |> 
-  left_join(select(orgs, uuid, name, category_list), by = c("org_uuid" = "uuid"))
-
-faang_osi_ai |> 
-  group_by(cloud_giant) |> 
+funding_rounds |> 
+  rename(funding_round_uuid = uuid) |> 
+  left_join(investments, by = "funding_round_uuid") |>
+  left_join(comparisons, by = "investor_uuid") |> 
+  select(investment_type, investment_uuid = uuid, criteria, raised_amount_usd, corp_id) |> 
+  group_by(investment_type, criteria) |> 
   summarize(
-    os = sum(str_detect(category_list, "Open Source"), na.rm=T)/n(),
-    ai = sum(str_detect(category_list, "Artificial Intelligence"), na.rm=T)/n()
+    avg_raised = sum(raised_amount_usd, na.rm=T)/length(unique(corp_id)),
+    n_deals = round(n()/length(unique(corp_id)), 2)
   ) |> 
-  mutate(across(where(is.numeric), ~round(100*., 2)))
+  mutate(value = ifelse(is.na(avg_raised), NA_character_, paste0("$", format_mil(avg_raised), " (", n_deals, ")"))) |>
+  select(-avg_raised, -n_deals) |> 
+  pivot_wider(names_from = criteria, values_from = value) |> 
+  left_join(stages, by = "investment_type") |> 
+  drop_na(stages) |> 
+  mutate(stages = fct_relabel(stages, ~str_replace_all(., "\n", " "))) |> 
+  select("Investment Type" = investment_type, Stage = stages, levels(comparisons$criteria)) |> 
+  arrange(Stage) |> 
+  kable()
+
+  # write_csv("~/Downloads/stages.csv")
 
 ```
 
-
-## Largest investments
+# Appendix: Largest overall investments by cloud companies
 
 These are outliers, generally -- 
 
-```{r}
+```{r largest_investments}
 cloud_investments |> 
   select(name, announced_on, raised_amount_usd) |> 
   slice_max(order_by = raised_amount_usd, n = 20) |> 
@@ -284,60 +1044,10 @@ cloud_investments |>
   kable()
 ```
 
-# Co-investment 
 
-## Investment partners
+# Appendix: When does the Big Cloud invest in the same companies?
 
-Who are the cloud companies most often partnering with?
-
-For first pass, plucked out top 20 co-investors for each of the big three. Table below has 43 rows because of the overlaps. Honestly not that informative or shocking -- 
-
-- coinvestors are pretty spread out, there are some repeated partners but big three
-  mostly invest by themselves and not with a single investment partner
-- And they share _some_ partners but not a ton -- maybe that can be exploited to show theyre investing in different things
-- Google invests sometimes with MSFT and Amazon, but not a whole lot?
-
-```{r}
-
-coinvestors <- cloud_investments |> 
-  select(cloud_giant, funding_round_uuid) |> 
-  left_join(funding_round_participants, by = c("funding_round_uuid" = "uuid")) |> 
-  unnest(cols = investor_uuids) |> 
-  group_by(cloud_giant, investor_uuids) |> 
-  count(name = "n_deals") |> 
-  group_by(cloud_giant) |> 
-  mutate(pct_deals = round(100 * n_deals / n(), 2)) |> 
-  left_join(select(investors, uuid, name), by = c("investor_uuids" = "uuid")) |> 
-  # anti-join to filter out 
-  anti_join(select(clouds, cloud_giant, name),
-            by = c("cloud_giant", "name")) |> 
-  arrange(desc(pct_deals)) |> 
-  slice_max(order_by = pct_deals, n = 20, with_ties = FALSE) |> 
-  mutate(deals = paste0(n_deals, " (", pct_deals, "%)"))
-
-coinvestors |> 
-  select(-investor_uuids, -n_deals, -pct_deals) |> 
-  pivot_wider(names_from=cloud_giant, values_from=deals) |> 
-  mutate(across(where(is.character), ~ifelse(is.na(.), "", .))) |> 
-  kable()
-```
-
-
-```{r coinvestor_heat_map, fig.height = 10}
-
-ggplot(coinvestors, aes(x = cloud_giant, y = name, fill = pct_deals)) + 
-  geom_tile() + 
-  scale_fill_viridis(option = "B") + 
-  labs(y = NULL, x = NULL, fill = "% of deals made\nwith coinvestor", 
-       title = "Heatmap of co-investment by Big Three",
-       subtitle = "It looks splotchy because of only a moderate amount of overlap")
-
-```
-
-
-## When does the Big Cloud invest in the same companies?
-
-```{r, eval=F}
+```{r big_cloud_coinvestments, eval=F}
 received_multiple <- cloud_investments |> 
   select(org_uuid, cloud_giant) |> 
   distinct() |> 
@@ -352,248 +1062,57 @@ received_multiple |>
   select(funding_round_uuid) |> 
   distinct() |> 
   left_join(funding_rounds, by = c("funding_round_uuid" = "uuid")) |> 
-  left_join(funding_round_participants, by = c("funding_round_uuid" = "uuid")) |> 
   left_join(select(orgs, uuid, category_groups_list, category_list), by = c("org_uuid" = "uuid")) |> 
   mutate(investor_names = map_chr(investor_names, ~paste0(., collapse = ", "))) |> 
   select(org_name, name, announced_on, investor_names, raised_amount_usd, category_groups_list, category_list) |> 
   write_csv("~/Downloads/multiple.csv")
-  
-
 ```
 
-# Sectoral analysis
+<!-- # tables for david to work through -->
 
-```{r top_sectors_overall}
-
-top_sectors <- cloud_orgs |> 
-  select(category_list) |> 
+```{r all_cloud_investments, eval = FALSE}
+cloud_investments_audit <- cloud_investments |> 
+  mutate(is_sole_investor = investor_count == 1) |> 
+  select(cloud_giant, funding_round_uuid, is_lead_investor, is_sole_investor) |> 
+  left_join(select(funding_rounds, uuid, org_uuid), by = c("funding_round_uuid" = "uuid")) |> 
+  left_join(select(orgs, name, uuid, category_list), by = c("org_uuid" = "uuid")) |> 
   mutate(category_list = str_split(category_list, ",")) |> 
   unnest(category_list) |> 
-  count(category_list) |> 
-  filter(!(category_list %in% c("Software", "Information Technology"))) |> 
-  slice_max(order_by = n, n = 15)
-
-```
-## Sectors at a glance
-
-```{r}
-
-cloud_sectors <- cloud_investments |> 
-  left_join(select(cloud_orgs, org_uuid, category_list) |> distinct(),
-            by = c("org_uuid" = "org_uuid")) |> 
-  mutate(category_list = str_split(category_list, ",")) |> 
-  unnest(category_list) |> 
-  filter(category_list %in% top_sectors$category_list) |> 
-  group_by(cloud_giant, category_list) |> 
-  summarize(n_deals = n(), amt = sum(raised_amount_usd, na.rm=T))
-  
-  
-cloud_sectors |> 
-  mutate(stat = paste0(n_deals, " ($", amt |> round(3) |> format_mil(), ")")) |> 
-  select(-n_deals, -amt) |> 
-  pivot_wider(names_from = cloud_giant, values_from = stat)
+  left_join(supply_chain, by = c("category_list" = "supply_chain")) |> 
+  group_by(cloud_giant, name, org_uuid, is_lead_investor, is_sole_investor) |> 
+  summarize(category_list = paste0(category_list, collapse = ","),
+            component = paste0(unique(component[!is.na(component)]), collapse = ",")) |> 
+  group_by(cloud_giant, name, org_uuid, category_list, component) |> 
+  summarize(times_lead_investor = sum(is_lead_investor, na.rm=T),
+            times_sole_investor = sum(is_sole_investor, na.rm=T),
+            times_investor = n()
+            ) |> 
+  ungroup() 
+cloud_investments_audit |> 
+  write_csv("~/Downloads/cloud_investments_audit.csv")
   
 ```
 
 
-```{r}
-cloud_sectors |> 
-  ggplot(aes(x = cloud_giant, y = category_list, fill = n_deals)) + 
-  geom_tile() + 
-  scale_fill_viridis(option = "A") 
+```{r non_equity, eval = F}
+non_equity <- cloud_investments |> 
+  mutate(is_sole_investor = investor_count == 1) |> 
+  select(cloud_giant, funding_round_uuid, is_lead_investor, is_sole_investor) |> 
+  left_join(select(funding_rounds, uuid, org_uuid, investment_type, announced_on, raised_amount_usd, contains("url")),
+            by = c("funding_round_uuid" = "uuid")) |> 
+  filter(investment_type == "non_equity_assistance") |> 
+  left_join(select(orgs, org_name = name, uuid, category_list), by = c("org_uuid" = "uuid")) 
+
+non_equity |> 
+  write_csv("~/Downloads/non_equity.csv")
+# name of company, name of cloud, cb url, url, 
 ```
 
-```{r}
+```{r supply_chain_leads, eval=F}
 
-cloud_sectors |> 
-  ggplot(aes(x = cloud_giant, y = category_list, fill = log10(amt))) + 
-  geom_tile() + 
-  scale_fill_viridis(option = "A") + 
-  labs(fill = "Total amount invested,\nin log10")
-```
-
-## Popular sectors over time
-
-
-```{r, fig.height = 8}
-big_cloud_top_sector <- cloud_investments |> 
-  left_join(select(cloud_orgs, org_uuid, category_list) |> distinct(), by = c("org_uuid" = "org_uuid")) |> 
-  mutate(category_list = str_split(category_list, ",")) |> 
-  unnest(category_list) |> 
-  filter(category_list %in% top_sectors$category_list) |> 
-  mutate(date = floor_date(announced_on, "3 months")) |> 
-  group_by(cloud_giant, category_list, date) |> 
-  summarize(n_deals = n(),
-            amt = sum(raised_amount_usd, na.rm=T))
-
-ggplot(big_cloud_top_sector, aes(x = date, y = amt, color = category_list)) + 
-  geom_line() + 
-  scale_y_continuous(labels = \(x){paste0("$", format_mil(x))}, limits = c(0, 5e9)) + 
-  scale_x_date(limits = c(as.Date("2012-01-01"), as.Date("2026-01-01"))) + 
-  facet_wrap(~cloud_giant, ncol = 1) +
-  labs(y = "Millions in investment", title = "Investment by sector over time, in millions",
-       caption = "Note that deals are represented multiple times if they contain multiple popular categories")
+supply_chain_lead_sole |>
+  select(-is_sole_investor) |>
+  pivot_wider(values_from=is_lead_investor, names_from=name) |>
+  write_csv("~/Downloads/supply_chain_leads.csv")
 
 ```
-
-```{r, fig.height = 8}
-
-
-ggplot(big_cloud_top_sector, aes(x = date, y = n_deals, color = category_list)) + 
-  geom_line() + 
-  scale_x_date(limits = c(as.Date("2012-01-01"), as.Date("2026-01-01"))) + 
-  facet_wrap(~cloud_giant, ncol = 1) +
-  labs(y = "Numbers of deals", title = "Investment by sector over time, in # of investments",
-       caption = "Note that deals are represented multiple times if they contain multiple popular categories")
-
-
-```
-## When are cloud companies releasing “free” / open source to build their market? 
-
-## AI vs Non-AI
-
-By # of deals:
-
-```{r}
-cloud_ai <- cloud_orgs |> 
-  mutate(is_ai = str_detect(category_list, "Artificial Intelligence")) |> 
-  select(org_uuid, is_ai) |> 
-  distinct()
-  
-cloud_investments |> 
-  left_join(cloud_ai, by = "org_uuid") |> 
-  drop_na(is_ai) |> 
-  mutate(date = floor_date(announced_on, "3 months")) |> 
-         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
-  group_by(date, is_ai, cloud_giant) |> 
-  count() |> 
-  ggplot(aes(x = date, y = n, linetype = is_ai, color = cloud_giant)) + 
-  geom_line() +
-  scale_x_date(limits = c(as.Date("2014-01-01"), as.Date("2026-01-01")))
-
-```
-
-
-```{r}
-  
-cloud_investments |> 
-  left_join(cloud_ai, by = "org_uuid") |> 
-  drop_na(is_ai) |> 
-  mutate(date = floor_date(announced_on, "3 months")) |> 
-         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
-  group_by(date, is_ai, cloud_giant) |> 
-  summarize(total_amt = sum(raised_amount_usd, na.rm=T)) |> 
-  ggplot(aes(x = date, y = total_amt, linetype = is_ai, color = cloud_giant)) + 
-  geom_line() + 
-  scale_y_continuous(labels = \(x){paste0("$", format(x/1e6, nsmall=1, big.mark = ",", scientific = FALSE))}) + 
-  scale_x_date(limits = c(as.Date("2014-01-01"), as.Date("2026-01-01")))
-
-```
-
-
-```{r}
-
-  
-cloud_investments |> 
-  left_join(cloud_ai, by = "org_uuid") |> 
-  drop_na(is_ai) |> 
-  mutate(date = floor_date(announced_on, "3 months")) |> 
-         # category = paste0(cloud_giant, ifelse(is_ai, " - Not AI", " - AI"))) |> 
-  group_by(date, is_ai, cloud_giant) |> 
-  summarize(total_amt = sum(raised_amount_usd, na.rm=T)) |> 
-  ggplot(aes(x = date, y = total_amt, linetype = is_ai, color = cloud_giant)) + 
-  geom_line() + 
-  scale_y_continuous(labels = \(x){paste0("$", format(x/1e6, nsmall=1, big.mark = ",", scientific = FALSE))}, limits = c(0, 100000000000)) + 
-  scale_x_date(limits = c(as.Date("2014-01-01"), as.Date("2026-01-01")))
-
-```
-## GovTech
-
-What kind of govtech firms to Big Cloud invest in?
-
-## Cloud vs Non-Cloud
-
-Compare cloud companies investment strategies to “non-cloud” tech, eg Meta/Apple, or edge, eg Intel
-
-# Demonstrating Cloud Dependence
-
-## Compared to other companies, Big Cloud invests more times in the same company
-
-```{r}
-
-# bar graph comparing
-# large VCs 
-# apple, meta, netflix, ... nvidia??
-# google/amazon
-
-
-```
-
-## Big Cloud acts as the lead investor in a disproportionate amount of cases
-
-```{r}
-
-```
-
-## "Ouroboros" of Cloud
-
-When is Big Cloud are investing in other companies that do cloud infra (Kubernetes)?
-
-## Dependence of investment receivers on Big Cloud
-
-Can we measure when one Big Cloud co has invested a large amount of company’s investment total?
-
-(how can we operationalize this given the dataset? Similar to lead/secondary question?)
-
-## Lead/ secondary: Can we quantify/ describe the difference in target firm when Big Cloud Lead investor vs secondary investor?
-
-# Changes over time
-
-When does Amazon become a cloud company? What about the others? Is there some “natural” progression?
-What external data will we need?
-
-# Depending on kind of funding round? Can we test if VC deals are diff than others? Or if amounts are generally bigger when the Big Three invest or lead?
-
-# International and “Third world” development
-
-Would probably be code to incorporate an "all EU" designation if we can get an easy list of the country codes. Each company receiving investment is listed once per cloud giant in the table below, so if Google invested in Asian Company LLC 3 times it'd still only appear once.
-
-```{r}
-
-cloud_orgs |> 
-  group_split(cloud_giant) |> 
-  # list(list(investments |> 
-  #             left_join(select(funding_rounds, uuid, org_uuid), by = c("funding_round_uuid" = "uuid")) |> 
-  #             mutate(cloud_giant = "all investments") |> 
-  #             select(cloud_giant, investor_name, org_uuid) |> 
-  #             distinct() |> 
-  #             left_join(orgs, by = c("org_uuid" = "uuid")) 
-  #     )) |> 
-  # flatten() |> 
-  map(\(corp_group){
-    total_n <- length(unique(corp_group$org_uuid))
-    cloud_giant_name <- unique(corp_group$cloud_giant)
-    top_ten <- corp_group |> 
-      count(country_code) |> 
-      slice_max(order_by = n, n = 10)
-    all_others <- corp_group |> 
-      filter(!(country_code %in% top_ten$country_code)) |> 
-      count() |> 
-      mutate(country_code = "All others for this cloud corp")
-    bind_rows(top_ten, all_others) |> 
-      mutate(n = paste0(n, " (", round(100*n/total_n, 2), "%)")) |> 
-      rename(!!cloud_giant_name := n)
-  }) |> 
-  reduce(full_join, by = "country_code") |> 
-  kable(caption = "Summary statistics by cloud corp")
-
-```
-
-There seems to be Third World development / investment arms maintained by the big 3 cloud:
-
-- https://www.crunchbase.com/organization/umbono
-- Google’s Africa Investment Fund investment in Series C - Moniepoin
-- NCAIR-Google AI Fund: Nigeria investments
-- Alibaba?
-
-

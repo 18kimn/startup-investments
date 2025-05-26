@@ -2,167 +2,188 @@ startup investments
 ================
 2025-05-18
 
-- [At a glance](#at-a-glance)
-  - [Aliases](#aliases)
-  - [Summary stats](#summary-stats)
-  - [Important investors to compare
-    against](#important-investors-to-compare-against)
-  - [Comparing FAANG Open source and AI
-    investments](#comparing-faang-open-source-and-ai-investments)
-  - [Largest investments](#largest-investments)
-- [Co-investment](#co-investment)
-  - [Investment partners](#investment-partners)
-  - [When does the Big Cloud invest in the same
-    companies?](#when-does-the-big-cloud-invest-in-the-same-companies)
-- [Sectoral analysis](#sectoral-analysis)
-  - [Sectors at a glance](#sectors-at-a-glance)
-  - [Popular sectors over time](#popular-sectors-over-time)
-  - [AI vs Non-AI](#ai-vs-non-ai)
-  - [Cloud vs Non-Cloud](#cloud-vs-non-cloud)
-- [Demonstrating Cloud Dependence](#demonstrating-cloud-dependence)
-  - [Compared to other companies, Big Cloud invests more times in the
-    same
-    company](#compared-to-other-companies-big-cloud-invests-more-times-in-the-same-company)
-  - [Big Cloud acts as the lead investor in a disproportionate amount of
-    cases](#big-cloud-acts-as-the-lead-investor-in-a-disproportionate-amount-of-cases)
-  - [“Ouroboros” of Cloud](#ouroboros-of-cloud)
-  - [Dependence of investment receivers on Big
-    Cloud](#dependence-of-investment-receivers-on-big-cloud)
-  - [Lead/ secondary: Can we quantify/ describe the difference in target
-    firm when Big Cloud Lead investor vs secondary
-    investor?](#lead-secondary-can-we-quantify-describe-the-difference-in-target-firm-when-big-cloud-lead-investor-vs-secondary-investor)
-- [Changes over time](#changes-over-time)
-- [Depending on kind of funding round? Can we test if VC deals are diff
-  than others? Or if amounts are generally bigger when the Big Three
-  invest or
-  lead?](#depending-on-kind-of-funding-round-can-we-test-if-vc-deals-are-diff-than-others-or-if-amounts-are-generally-bigger-when-the-big-three-invest-or-lead)
-- [International and “Third world”
-  development](#international-and-third-world-development)
+- [Preamble/setup](#preamblesetup)
+- [Figure 1: Big Cloud invests a lot compared to other important
+  investors](#figure-1-big-cloud-invests-a-lot-compared-to-other-important-investors)
+- [Figure 1.5: Big Cloud invests more in <x stage> more than
+  others](#figure-15-big-cloud-invests-more-in--more-than-others)
+- [Figure 2: Big Cloud is leading more deals or active as the sole
+  investor more
+  often](#figure-2-big-cloud-is-leading-more-deals-or-active-as-the-sole-investor-more-often)
+- [Figure 2.5: Co-invested companies are more often in
+  AI](#figure-25-co-invested-companies-are-more-often-in-ai)
+- [Figure 3: The Big Cloud investors find their own
+  niches](#figure-3-the-big-cloud-investors-find-their-own-niches)
+- [Figure 3.2: Gov tech](#figure-32-gov-tech)
+- [Figure 4: Big Cloud and other major investors have taken a strong
+  pivot to
+  AI](#figure-4-big-cloud-and-other-major-investors-have-taken-a-strong-pivot-to-ai)
+- [Figure 5: Big Cloud is investing in all parts of the supply
+  chain](#figure-5-big-cloud-is-investing-in-all-parts-of-the-supply-chain)
+  - [5a: \# of deals in a given portion of the supply
+    chain](#5a--of-deals-in-a-given-portion-of-the-supply-chain)
+  - [5b: \# of deals in given supply chain component as proportion of
+    all
+    deals](#5b--of-deals-in-given-supply-chain-component-as-proportion-of-all-deals)
+  - [5: Total size of all participated funding
+    rounds](#5-total-size-of-all-participated-funding-rounds)
+  - [5b: % of lead deals](#5b--of-lead-deals)
+  - [5c: % of sole investor](#5c--of-sole-investor)
+  - [5d: % of repeat investor](#5d--of-repeat-investor)
+- [Figure 6: Big cloud has especially salient interests in X
+  regions](#figure-6-big-cloud-has-especially-salient-interests-in-x-regions)
+- [Figure 7: The Big 3 clouds have different regional preferences (3
+  maps, one per cloud
+  company)](#figure-7-the-big-3-clouds-have-different-regional-preferences-3-maps-one-per-cloud-company)
+- [Figure 8: Over time, each Big Cloud invests moreso into certain
+  regions (line
+  graph)](#figure-8-over-time-each-big-cloud-invests-moreso-into-certain-regions-line-graph)
+- [Table: Big Cloud has especially salient interests in X
+  regions](#table-big-cloud-has-especially-salient-interests-in-x-regions)
+- [Table of investments by top
+  sectors](#table-of-investments-by-top-sectors)
+- [Table: Coinvesting investors](#table-coinvesting-investors)
+- [Appendix: Aliases of cloud
+  companies](#appendix-aliases-of-cloud-companies)
+- [Appendix: Important investors to compare
+  against](#appendix-important-investors-to-compare-against)
+- [Appendix: Table of investment counts by series and investor
+  group](#appendix-table-of-investment-counts-by-series-and-investor-group)
+- [Appendix: Largest overall investments by cloud
+  companies](#appendix-largest-overall-investments-by-cloud-companies)
+- [Appendix: When does the Big Cloud invest in the same
+  companies?](#appendix-when-does-the-big-cloud-invest-in-the-same-companies)
 
-# At a glance
+# Preamble/setup
 
-## Aliases
+# Figure 1: Big Cloud invests a lot compared to other important investors
 
-| Cloud corp | Aliases (# deals) |
-|:---|:---|
-| Amazon | AWS EdStart (1) , AWS Investments LLC (1) , Amazon Australia (1) , Amazon Housing Equity Fund (1) , Amazon One Medical (1) , Georg Hesse (Ex-Amazon Music) (1) , AWS Fintech Accelerator (2) , Amazon AWS Incubator (2) , Amazon.com NV Investment Holdings (2) , Banco da Amazonia (2) , Amazon Future Engineer (3) , AWS Double Equity (4) , Amazon.com.incs Ltd (4) , Amazon Launchpad (5) , AWS Activate (11) , Amazon Corporate Holdings (11) , Amazon Smbhav Venture Fund (11) , Austria Wirtschaftsservice (AWS) (12) , Amazon Industrial Innovation Fund (14) , Amazon Business (15) , AWS Foundation (17) , AWS Healthcare Accelerator (23) , AWS Startup Loft Accelerator (23) , AWS FinTech Africa Accelerator (25) , AWS Space Accelerator (37) , AWS Impact Accelerator (63) , Amazon Alexa Fund (140) , Amazon Web Services (148) , Amazon (158) |
-| Google | Google AI (1) , Google Quantum AI (1) , Google for Startups Israel (1) , Google Canada (2) , Google Umbono (2) , Google’s Africa Investment Fund (2) , Google for Startups Women Founders Fund (7) , NCAIR-Google AI Fund (10) , Google Digital News Initiative (11) , Google for Startups Accelerator Canada (11) , Google Assistant Investments (21) , Google for Startups Latino Founders Fund (24) , Google Cloud (26) , Alphabet (27) , Google.org (85) , Google Launchpad Accelerator (117) , Google (313) , Google Ventures (1178) , Google for Startups (1654) |
-| Microsoft | Microsoft Airband (1) , Microsoft Imagine Fund (1) , Microsoft Research (1) , Microsoft Founders Hub (2) , Azure (4) , Microsoft AI for Good Accelerator (13) , Microsoft Accelerator Shanghai (14) , Microsoft Accelerator Berlin (41) , Microsoft Accelerator Seattle (43) , Microsoft Climate Innovation Fund (51) , Microsoft Accelerator London (71) , Microsoft Accelerator Paris (72) , Microsoft ScaleUp Tel Aviv (109) , Microsoft Accelerator Bangalore (125) , Microsoft for Startups (126) , Microsoft (302) , M12 - Microsoft’s Venture Fund (317) , Microsoft Accelerator (387) |
+![](startup-analysis_files/figure-gfm/fig_1-1.png)<!-- -->
 
-## Summary stats
+# Figure 1.5: Big Cloud invests more in <x stage> more than others
 
-| Statistic                                 |   Value |
-|:------------------------------------------|--------:|
-| \# of investments                         | 1174990 |
-| \# of unique funding rounds               |  711238 |
-| \# of investors                           |  300934 |
-| \# of companies receiving investment      | 3862971 |
-| Median investors in a given funding round |       1 |
+![](startup-analysis_files/figure-gfm/fig_1b-1.png)<!-- -->
 
-Top-level summary statistics of full dataset
+# Figure 2: Big Cloud is leading more deals or active as the sole investor more often
 
-## Important investors to compare against
+![](startup-analysis_files/figure-gfm/fig_2-1.png)<!-- -->
 
-| name                        | criteria           | investment_count |
-|:----------------------------|:-------------------|-----------------:|
-| Y Combinator                | Active Accelerator |             7323 |
-| Techstars                   | Active Accelerator |             6205 |
-| MassChallenge               | Active Accelerator |             3200 |
-| 500 Global                  | Active Accelerator |             3174 |
-| SOSV                        | Active Accelerator |             2881 |
-| Plug and Play               | Active Accelerator |             1975 |
-| Google for Startups         | Active Accelerator |             1654 |
-| Newchip Accelerator         | Active Accelerator |             1285 |
-| VentureOut                  | Active Accelerator |             1093 |
-| Cleantech Open              | Active Accelerator |              679 |
-| Accel                       | Big VC             |             2173 |
-| Sequoia Capital             | Big VC             |             2122 |
-| Insight Partners            | Big VC             |             1136 |
-| New Enterprise Associates   | Big VC             |             2232 |
-| General Catalyst            | Big VC             |             1445 |
-| Andreessen Horowitz         | Big VC             |             1673 |
-| Tiger Global Management     | Big VC             |             1206 |
-| Greenspring Associates      | Big VC             |              217 |
-| Thrive Capital              | Big VC             |              361 |
-| Lightspeed Venture Partners | Big VC             |             1485 |
-| Meta                        | Other FAANG        |               59 |
-| Apple                       | Other FAANG        |               32 |
-| NVIDIA                      | Other FAANG        |              122 |
+# Figure 2.5: Co-invested companies are more often in AI
 
-The table below is a bit messy conceptually because it’s processing the
-same funding round multiple times often.
+![](startup-analysis_files/figure-gfm/coinvestor_heat_map-1.png)<!-- -->
 
-| Statistic | Active Accelerator | All investments | Amazon | Big VC | Google | Microsoft | Other FAANG |
-|:---|:---|:---|:---|:---|:---|:---|:---|
-| Total number of deals | 29,469 | 1,174,990 | 738 | 14,050 | 3,493 | 1,680 | 213 |
-| Total dollar amount of participated deals (in millions, including other investors) | 57,556.74 | 30,289,750.83 | 33,075.15 | 976,020.49 | 114,936.91 | 98,160.22 | 54,055.37 |
-| Number of investing aliases | 10 | 155,581 | 29 | 10 | 19 | 18 | 3 |
-| % of time that they “lead” funding rounds | 38.27 | 29.04 | 68.43 | 42.35 | 69.37 | 54.35 | 33.33 |
-| % of time that they are the sole investor | 56.68 | 28.62 | 53.79 | 8.83 | 57.97 | 57.38 | 33.8 |
-| % of companies receiving repeat investments | 17.78 | 20.89 | 8.06 | 43.53 | 13.63 | 11.51 | 10.93 |
-| Median size of participating deal | 0.33 | 4.84 | 2.27 | 21.4 | 6.5 | 11 | 26.75 |
-| Companies receiving investment | 22,419 | 294,632 | 633 | 6,859 | 2,854 | 1,260 | 183 |
-| % of invested companies in open-source | 0.51 | 0.22 | 0.95 | 1.4 | 0.49 | 0.48 | 2.19 |
-| % of invested companies in AI | 13.5 | 6.67 | 19.59 | 12.12 | 14.26 | 19.37 | 44.26 |
-| % of invested companies in Crypto | 1.03 | 1.2 | 1.42 | 2.33 | 0.77 | 0.87 | 2.19 |
+# Figure 3: The Big Cloud investors find their own niches
 
-Summary statistics by corp group
+![](startup-analysis_files/figure-gfm/big_cloud_sectors-1.png)<!-- -->
 
-## Comparing FAANG Open source and AI investments
+![](startup-analysis_files/figure-gfm/big_cloud_sectors_prop-1.png)<!-- -->
 
-    ## # A tibble: 6 × 3
-    ##   cloud_giant    os    ai
-    ##   <chr>       <dbl> <dbl>
-    ## 1 Amazon       0.95  19.6
-    ## 2 Apple        0     13.8
-    ## 3 Google       0.49  14.3
-    ## 4 Meta         0     22.2
-    ## 5 Microsoft    0.48  19.4
-    ## 6 NVIDIA       3.92  65.7
+# Figure 3.2: Gov tech
 
-## Largest investments
+![](startup-analysis_files/figure-gfm/govtech-1.png)<!-- -->
 
-These are outliers, generally –
+# Figure 4: Big Cloud and other major investors have taken a strong pivot to AI
 
-| name | announced_on | Raised amount, millions |
-|:---|:---|:---|
-| Microsoft investment in Venture Round - OpenAI | 2025-03-31 | 40,000 |
-| Microsoft investment in Corporate Round - OpenAI | 2023-01-10 | 10,000 |
-| Microsoft investment in Venture Round - OpenAI | 2024-10-02 | 6,600 |
-| Alphabet investment in Series C - Waymo | 2024-07-23 | 5,600 |
-| Google investment in Corporate Round - Reliance Jio | 2020-07-15 | 4,489.24 |
-| Amazon investment in Convertible Note - Anthropic | 2023-09-25 | 4,000 |
-| Amazon investment in Corporate Round - Anthropic | 2024-11-22 | 4,000 |
-| Google investment in Post-IPO Equity - Clearwire | 2008-05-06 | 3,200 |
-| Amazon investment in Series E - Rivian | 2020-07-10 | 2,500 |
-| Alphabet investment in Series B - Waymo | 2021-06-16 | 2,500 |
-| Alphabet investment in Series A - Waymo | 2020-03-02 | 2,250 |
-| Microsoft investment in Corporate Round - Cruise | 2021-01-19 | 2,000 |
-| Microsoft investment in Post-IPO Secondary - London Stock Exchange Group | 2022-12-11 | 2,000 |
-| Google investment in Corporate Round - Anthropic | 2023-10-27 | 2,000 |
-| Google investment in Series B - Commonwealth Fusion | 2021-12-01 | 1,800 |
-| Amazon investment in Corporate Round - Amazon Seller Services | 2020-09-30 | 1,526.48 |
-| Amazon Corporate Holdings investment in Corporate Round - Amazon Seller Services | 2020-09-30 | 1,526.48 |
-| Google investment in Series E - Gojek | 2018-02-12 | 1,500 |
-| Google investment in Post-IPO Equity - ADT | 2022-09-06 | 1,500 |
-| Microsoft investment in Corporate Round - G42 | 2024-04-15 | 1,500 |
+By \# of deals:
 
-# Co-investment
+![](startup-analysis_files/figure-gfm/cloud_ai_deals-1.png)<!-- -->
 
-## Investment partners
+![](startup-analysis_files/figure-gfm/cloud_ai_amt-1.png)<!-- -->
 
-Who are the cloud companies most often partnering with?
+![](startup-analysis_files/figure-gfm/amt_cloud-1.png)<!-- -->
 
-For first pass, plucked out top 20 co-investors for each of the big
-three. Table below has 43 rows because of the overlaps. Honestly not
-that informative or shocking –
+# Figure 5: Big Cloud is investing in all parts of the supply chain
 
-- coinvestors are pretty spread out, there are some repeated partners
-  but big three mostly invest by themselves and not with a single
-  investment partner
-- And they share *some* partners but not a ton – maybe that can be
-  exploited to show theyre investing in different things
-- Google invests sometimes with MSFT and Amazon, but not a whole lot?
+## 5a: \# of deals in a given portion of the supply chain
+
+![](startup-analysis_files/figure-gfm/supply_tile-1.png)<!-- -->
+
+## 5b: \# of deals in given supply chain component as proportion of all deals
+
+![](startup-analysis_files/figure-gfm/supply_tile_prop-1.png)<!-- -->
+
+## 5: Total size of all participated funding rounds
+
+![](startup-analysis_files/figure-gfm/size_tile-1.png)<!-- -->
+
+## 5b: % of lead deals
+
+![](startup-analysis_files/figure-gfm/lead_tile-1.png)<!-- -->
+
+## 5c: % of sole investor
+
+![](startup-analysis_files/figure-gfm/sole_tile-1.png)<!-- -->
+
+## 5d: % of repeat investor
+
+# Figure 6: Big cloud has especially salient interests in X regions
+
+![](startup-analysis_files/figure-gfm/cloud_regions-1.png)<!-- -->
+
+![](startup-analysis_files/figure-gfm/cloud_region_map-1.png)<!-- -->
+
+![](startup-analysis_files/figure-gfm/cloud_region_bar-1.png)<!-- -->
+
+There seems to be Third World development / investment arms maintained
+by the big 3 cloud:
+
+- <https://www.crunchbase.com/organization/umbono>
+- Google’s Africa Investment Fund investment in Series C - Moniepoin
+- NCAIR-Google AI Fund: Nigeria investments
+- Alibaba?
+
+# Figure 7: The Big 3 clouds have different regional preferences (3 maps, one per cloud company)
+
+![](startup-analysis_files/figure-gfm/region_big_cloud_map-1.png)<!-- -->
+
+# Figure 8: Over time, each Big Cloud invests moreso into certain regions (line graph)
+
+Something wrong with this graph – doesn’t make sense to display for the
+moment.
+
+# Table: Big Cloud has especially salient interests in X regions
+
+| country_code                   | Amazon       | Google        | Microsoft    |
+|:-------------------------------|:-------------|:--------------|:-------------|
+| USA                            | 350 (55.29%) | 1326 (46.46%) | 513 (40.71%) |
+| IND                            | 68 (10.74%)  | 167 (5.85%)   | 126 (10%)    |
+| GBR                            | 38 (6%)      | 180 (6.31%)   | 141 (11.19%) |
+| ISR                            | 19 (3%)      | NA            | 124 (9.84%)  |
+| AUS                            | 16 (2.53%)   | NA            | NA           |
+| CAN                            | 16 (2.53%)   | 52 (1.82%)    | 36 (2.86%)   |
+| AUT                            | 15 (2.37%)   | NA            | NA           |
+| BRA                            | 14 (2.21%)   | 263 (9.22%)   | NA           |
+| NGA                            | 12 (1.9%)    | 83 (2.91%)    | NA           |
+| NA                             | 10 (1.58%)   | NA            | 19 (1.51%)   |
+| All others for this cloud corp | 96 (15.17%)  | 497 (17.41%)  | 165 (13.1%)  |
+| ESP                            | NA           | 82 (2.87%)    | NA           |
+| DEU                            | NA           | 78 (2.73%)    | 51 (4.05%)   |
+| JPN                            | NA           | 71 (2.49%)    | NA           |
+| POL                            | NA           | 62 (2.17%)    | NA           |
+| KOR                            | NA           | 52 (1.82%)    | NA           |
+| CHN                            | NA           | NA            | 157 (12.46%) |
+| FRA                            | NA           | NA            | 84 (6.67%)   |
+| SGP                            | NA           | NA            | 13 (1.03%)   |
+
+Summary statistics by cloud corp
+
+# Table of investments by top sectors
+
+| category_list | Amazon | Google | Microsoft |
+|:---|:---|:---|:---|
+| Analytics | 33 (\$1,746.69) | 226 (\$8,531.23) | 170 (\$4,856.84) |
+| Apps | 29 (\$107.7) | 218 (\$5,133.25) | 95 (\$349.52) |
+| Artificial Intelligence (AI) | 144 (\$13,384.17) | 505 (\$26,844.97) | 334 (\$72,300.73) |
+| E-Commerce | 81 (\$8,504.18) | 261 (\$6,146.63) | 110 (\$3,535.17) |
+| Education | 46 (\$18.14) | 207 (\$539.53) | 62 (\$441.42) |
+| FinTech | 52 (\$191.68) | 240 (\$3,914.04) | 57 (\$956.75) |
+| Financial Services | 44 (\$119.23) | 257 (\$4,249.87) | 69 (\$2,975.89) |
+| Health Care | 61 (\$326.64) | 536 (\$21,576.3) | 117 (\$1,337.88) |
+| Internet | 65 (\$1,445.44) | 249 (\$13,538.37) | 151 (\$5,822.89) |
+| Machine Learning | 53 (\$11,033.19) | 279 (\$11,105.7) | 213 (\$68,628.14) |
+| SaaS | 51 (\$190.38) | 344 (\$5,041.74) | 257 (\$60,326.99) |
+
+# Table: Coinvesting investors
 
 | name                        | Amazon     | Google     | Microsoft  |
 |:----------------------------|:-----------|:-----------|:-----------|
@@ -210,126 +231,104 @@ that informative or shocking –
 | Alumni Ventures             |            |            | 12 (0.66%) |
 | Gaingels                    |            |            | 11 (0.6%)  |
 
-![](startup-analysis_files/figure-gfm/coinvestor_heat_map-1.png)<!-- -->
+# Appendix: Aliases of cloud companies
 
-## When does the Big Cloud invest in the same companies?
+| Cloud corp | Aliases (# deals) |
+|:---|:---|
+| Amazon | AWS EdStart (1) , AWS Investments LLC (1) , Amazon Australia (1) , Amazon Housing Equity Fund (1) , Amazon One Medical (1) , Georg Hesse (Ex-Amazon Music) (1) , AWS Fintech Accelerator (2) , Amazon AWS Incubator (2) , Amazon.com NV Investment Holdings (2) , Banco da Amazonia (2) , Amazon Future Engineer (3) , AWS Double Equity (4) , Amazon.com.incs Ltd (4) , Amazon Launchpad (5) , AWS Activate (11) , Amazon Corporate Holdings (11) , Amazon Smbhav Venture Fund (11) , Austria Wirtschaftsservice (AWS) (12) , Amazon Industrial Innovation Fund (14) , Amazon Business (15) , AWS Foundation (17) , AWS Healthcare Accelerator (23) , AWS Startup Loft Accelerator (23) , AWS FinTech Africa Accelerator (25) , AWS Space Accelerator (37) , AWS Impact Accelerator (63) , Amazon Alexa Fund (140) , Amazon Web Services (148) , Amazon (158) |
+| Google | Google AI (1) , Google Quantum AI (1) , Google for Startups Israel (1) , Google Canada (2) , Google Umbono (2) , Google’s Africa Investment Fund (2) , Google for Startups Women Founders Fund (7) , NCAIR-Google AI Fund (10) , Google Digital News Initiative (11) , Google for Startups Accelerator Canada (11) , Google Assistant Investments (21) , Google for Startups Latino Founders Fund (24) , Google Cloud (26) , Alphabet (27) , Google.org (85) , Google Launchpad Accelerator (117) , Google (313) , Google Ventures (1178) , Google for Startups (1654) |
+| Microsoft | Microsoft Airband (1) , Microsoft Imagine Fund (1) , Microsoft Research (1) , Microsoft Founders Hub (2) , Azure (4) , Microsoft AI for Good Accelerator (13) , Microsoft Accelerator Shanghai (14) , Microsoft Accelerator Berlin (41) , Microsoft Accelerator Seattle (43) , Microsoft Climate Innovation Fund (51) , Microsoft Accelerator London (71) , Microsoft Accelerator Paris (72) , Microsoft ScaleUp Tel Aviv (109) , Microsoft Accelerator Bangalore (125) , Microsoft for Startups (126) , Microsoft (302) , M12 - Microsoft’s Venture Fund (317) , Microsoft Accelerator (387) |
 
-# Sectoral analysis
+# Appendix: Important investors to compare against
 
-## Sectors at a glance
+| name                        | criteria                | investment_count |
+|:----------------------------|:------------------------|-----------------:|
+| Y Combinator                | Active Accelerator      |             7323 |
+| Techstars                   | Active Accelerator      |             6205 |
+| MassChallenge               | Active Accelerator      |             3200 |
+| 500 Global                  | Active Accelerator      |             3174 |
+| SOSV                        | Active Accelerator      |             2881 |
+| Plug and Play               | Active Accelerator      |             1975 |
+| Google for Startups         | Active Accelerator      |             1654 |
+| Newchip Accelerator         | Active Accelerator      |             1285 |
+| VentureOut                  | Active Accelerator      |             1093 |
+| Cleantech Open              | Active Accelerator      |              679 |
+| Accel                       | Big VC                  |             2173 |
+| Sequoia Capital             | Big VC                  |             2122 |
+| Insight Partners            | Big VC                  |             1136 |
+| New Enterprise Associates   | Big VC                  |             2232 |
+| General Catalyst            | Big VC                  |             1445 |
+| Andreessen Horowitz         | Big VC                  |             1673 |
+| Tiger Global Management     | Big VC                  |             1206 |
+| Greenspring Associates      | Big VC                  |              217 |
+| Thrive Capital              | Big VC                  |              361 |
+| Lightspeed Venture Partners | Big VC                  |             1485 |
+| Meta                        | Other Magnificent Seven |               59 |
+| Apple                       | Other Magnificent Seven |               32 |
+| Tesla                       | Other Magnificent Seven |                2 |
+| NVIDIA                      | Other Magnificent Seven |              122 |
 
-    ## # A tibble: 15 × 4
-    ##    category_list                Amazon              Google             Microsoft
-    ##    <chr>                        <chr>               <chr>              <chr>    
-    ##  1 Analytics                    33 ($ 1,746.69498)  226 ($ 8,531.2344) 170 ($ 4…
-    ##  2 Apps                         29 ($   107.70035)  218 ($ 5,133.2495) 95 ($   …
-    ##  3 Artificial Intelligence (AI) 144 ($13,384.16716) 505 ($26,844.9735) 334 ($72…
-    ##  4 Big Data                     12 ($    45.03736)  124 ($ 3,042.6298) 101 ($  …
-    ##  5 E-Commerce                   81 ($ 8,504.17703)  261 ($ 6,146.6313) 110 ($ 3…
-    ##  6 Education                    46 ($    18.14265)  207 ($   539.5331) 62 ($   …
-    ##  7 Enterprise Software          12 ($   200.30649)  196 ($ 7,417.6111) 165 ($ 2…
-    ##  8 FinTech                      52 ($   191.68362)  240 ($ 3,914.0415) 57 ($   …
-    ##  9 Financial Services           44 ($   119.22662)  257 ($ 4,249.8737) 69 ($ 2,…
-    ## 10 Health Care                  61 ($   326.64245)  536 ($21,576.2998) 117 ($ 1…
-    ## 11 Internet                     65 ($ 1,445.43766)  249 ($13,538.3654) 151 ($  …
-    ## 12 Machine Learning             53 ($11,033.18599)  279 ($11,105.6994) 213 ($68…
-    ## 13 Mobile                       18 ($    218.0029)  167 ($ 6,428.5373) 132 ($ 1…
-    ## 14 Mobile Apps                  19 ($   237.60764)  183 ($  4,408.834) 62 ($ 1,…
-    ## 15 SaaS                         51 ($   190.38002)  344 ($ 5,041.7372) 257 ($60…
+Time for the chunk summary_stats to run: 0.000439882278442383
 
-![](startup-analysis_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
+# Appendix: Table of investment counts by series and investor group
 
-![](startup-analysis_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+| Investment Type | Stage | Google | Microsoft | Amazon | Other Magnificent Seven | Big VC | Active Accelerator | All investors |
+|:---|:---|:---|:---|:---|:---|:---|:---|:---|
+| angel | Seed, pre-seed, and grants | $7.55 (10)       |$ (2) | \$0.7 (2) | NA | \$9.78 (4.86) | \$12.45 (20.25) | \$1.85 (1.67) |  |
+| grant | Seed, pre-seed, and grants | \$328.75 (339) | \$103.03 (104) | \$52.8 (198) | \$139.73 (9.67) | \$2.05 (1.2) | \$4.54 (88.1) | \$33.05 (9.83) |
+| non_equity_assistance | Seed, pre-seed, and grants | \$50.46 (1591) | \$23.64 (637) | $2.21 (145)     |$ (2.5) | NA | \$5.57 (600) | \$0.64 (18) |  |
+| pre_seed | Seed, pre-seed, and grants | \$65.3 (73) | \$22.58 (48) | \$10.87 (43) | \$3.01 (4.5) | \$39.75 (21) | \$234.55 (760) | \$2.4 (3.2) |
+| seed | Seed, pre-seed, and grants | \$1,454.6 (314) | \$372.78 (219) | \$433.02 (90) | \$58.59 (11.67) | \$1,259.04 (199.3) | \$1,072.14 (1069.3) | \$11.82 (4.54) |
+| convertible_note | Early-stage | \$287.8 (6) | \$249.27 (10) | \$4,040.1 (3) | \$15 (3) | \$49.85 (4) | \$25.07 (142.62) | \$15.3 (2.31) |
+| series_a | Early-stage | \$12,996.86 (331) | \$2,230.13 (120) | \$2,324.34 (46) | \$214.25 (5.67) | \$7,906.07 (322.1) | \$1,435.45 (166.11) | \$62.56 (4.04) |
+| series_b | Early-stage | \$19,469.93 (288) | \$4,757.73 (111) | \$2,987.28 (47) | \$1,349.79 (9.67) | \$14,331.94 (285.4) | \$1,451.99 (54) | \$144.47 (4.09) |
+| series_c | Later-stage | \$22,749.59 (209) | \$6,222.49 (71) | \$1,621.41 (27) | \$8,234.37 (17) | \$18,164.82 (193.5) | \$1,652.46 (25.2) | \$226.02 (3.63) |
+| series_d | Later-stage | \$12,664.03 (101) | \$4,893.14 (47) | \$2,391.87 (15) | \$980.33 (4.33) | \$11,934.2 (109.4) | \$964 (7.4) | \$263.53 (3.03) |
+| series_e | Later-stage | \$5,525.38 (36) | \$2,305.04 (22) | \$3,101.51 (7) | \$387 (2.67) | \$10,363.7 (56.7) | \$755 (2.33) | \$321.55 (2.48) |
+| series_f | Later-stage | \$3,086 (16) | \$2,609.5 (11) | \$1,276 (5) | \$1,672.5 (3.5) | \$5,016.22 (25) | \$1,498.2 (4) | \$406.78 (2.09) |
+| series_g | Later-stage | \$2,675.5 (7) | \$1,110 (3) | \$1,575 (2) | NA | \$2,585.69 (9.7) | \$1,162.73 (4) | \$435.19 (1.61) |
+| series_h | Later-stage | \$1,410 (5) | \$100 (2) | NA | NA | \$2,059.99 (3.25) | NA | \$498.61 (1.34) |
+| series_i | Later-stage | \$431.95 (1) | \$500 (1) | \$500 (1) | \$500 (1) | \$4,186.39 (1.2) | NA | \$904.94 (1.1) |
+| series_j | Later-stage | \$805 (1) | \$2,205 (2) | NA | \$10,805 (2) | \$6,413.3 (1.8) | NA | \$2,594.03 (1.3) |
+| corporate_round | Post-IPO/ICO and corporate rounds | \$12,456.97 (24) | \$14,955.11 (17) | \$10,676.51 (42) | \$1,927.71 (3.33) | \$181.18 (2) | \$13.33 (1.67) | \$54 (1.42) |
+| debt_financing | Post-IPO/ICO and corporate rounds | \$1,800.52 (6) | \$211.6 (12) | \$42.58 (9) | NA | \$211.04 (6.12) | \$11.63 (4) | \$448.63 (3.95) |
+| initial_coin_offering | Post-IPO/ICO and corporate rounds | \$134 (2) | \$73.88 (1) | NA | NA | \$588.44 (5) | \$6.04 (2) | \$95.25 (2) |
+| non_equity_assistance | Post-IPO/ICO and corporate rounds | \$50.46 (1591) | \$23.64 (637) | $2.21 (145)     |$ (2.5) | NA | \$5.57 (600) | \$0.64 (18) |  |
+| post_ipo_debt | Post-IPO/ICO and corporate rounds | \$110 (1) | \$271.59 (2) | \$439 (2) | \$252 (1) | \$442.8 (1.67) | NA | \$1,325.33 (2.6) |
+| post_ipo_equity | Post-IPO/ICO and corporate rounds | \$7,950 (8) | \$1,208.5 (11) | \$899.57 (5) | \$1,105.57 (6) | \$2,742.57 (10.7) | \$3.92 (2) | \$319.82 (2.15) |
+| post_ipo_secondary | Post-IPO/ICO and corporate rounds | NA | \$2,000 (1) | NA | NA | \$1,480.61 (1) | NA | \$429.76 (1.53) |
+| private_equity | Post-IPO/ICO and corporate rounds | \$2,307.1 (9) | $1,436.2 (8)     |$ (1) | \$5,520 (3) | \$3,719.69 (18.1) | \$15.74 (1.67) | \$304.39 (3.71) |  |
+| secondary_market | Other | $25 (2)          |$ (1) | NA | NA | $1,785 (6.9)       |$ (3) | \$310.96 (1.95) |  |  |
+| series_unknown | Other | \$6,035.42 (104) | \$50,299.01 (217) | \$699.71 (47) | \$2,016.43 (3.5) | \$9,860.85 (126.9) | \$132.71 (90) | \$62.44 (3.55) |
+| undisclosed | Other | \$102.35 (7) | NA | \$0.66 (1) | NA | \$68.41 (2.43) | \$8.83 (6.7) | \$48.11 (1.39) |
 
-## Popular sectors over time
+# Appendix: Largest overall investments by cloud companies
 
-![](startup-analysis_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
+These are outliers, generally –
 
-![](startup-analysis_files/figure-gfm/unnamed-chunk-12-1.png)<!-- -->
-\## When are cloud companies releasing “free” / open source to build
-their market?
+| name | announced_on | Raised amount, millions |
+|:---|:---|:---|
+| Microsoft investment in Venture Round - OpenAI | 2025-03-31 | 40,000 |
+| Microsoft investment in Corporate Round - OpenAI | 2023-01-10 | 10,000 |
+| Microsoft investment in Venture Round - OpenAI | 2024-10-02 | 6,600 |
+| Alphabet investment in Series C - Waymo | 2024-07-23 | 5,600 |
+| Google investment in Corporate Round - Reliance Jio | 2020-07-15 | 4,489.24 |
+| Amazon investment in Convertible Note - Anthropic | 2023-09-25 | 4,000 |
+| Amazon investment in Corporate Round - Anthropic | 2024-11-22 | 4,000 |
+| Google investment in Post-IPO Equity - Clearwire | 2008-05-06 | 3,200 |
+| Amazon investment in Series E - Rivian | 2020-07-10 | 2,500 |
+| Alphabet investment in Series B - Waymo | 2021-06-16 | 2,500 |
+| Alphabet investment in Series A - Waymo | 2020-03-02 | 2,250 |
+| Microsoft investment in Corporate Round - Cruise | 2021-01-19 | 2,000 |
+| Microsoft investment in Post-IPO Secondary - London Stock Exchange Group | 2022-12-11 | 2,000 |
+| Google investment in Corporate Round - Anthropic | 2023-10-27 | 2,000 |
+| Google investment in Series B - Commonwealth Fusion | 2021-12-01 | 1,800 |
+| Amazon investment in Corporate Round - Amazon Seller Services | 2020-09-30 | 1,526.48 |
+| Amazon Corporate Holdings investment in Corporate Round - Amazon Seller Services | 2020-09-30 | 1,526.48 |
+| Google investment in Series E - Gojek | 2018-02-12 | 1,500 |
+| Google investment in Post-IPO Equity - ADT | 2022-09-06 | 1,500 |
+| Microsoft investment in Corporate Round - G42 | 2024-04-15 | 1,500 |
 
-## AI vs Non-AI
+# Appendix: When does the Big Cloud invest in the same companies?
 
-By \# of deals:
-
-![](startup-analysis_files/figure-gfm/unnamed-chunk-13-1.png)<!-- -->
-
-![](startup-analysis_files/figure-gfm/unnamed-chunk-14-1.png)<!-- -->
-
-![](startup-analysis_files/figure-gfm/unnamed-chunk-15-1.png)<!-- -->
-\## GovTech
-
-What kind of govtech firms to Big Cloud invest in?
-
-## Cloud vs Non-Cloud
-
-Compare cloud companies investment strategies to “non-cloud” tech, eg
-Meta/Apple, or edge, eg Intel
-
-# Demonstrating Cloud Dependence
-
-## Compared to other companies, Big Cloud invests more times in the same company
-
-## Big Cloud acts as the lead investor in a disproportionate amount of cases
-
-## “Ouroboros” of Cloud
-
-When is Big Cloud are investing in other companies that do cloud infra
-(Kubernetes)?
-
-## Dependence of investment receivers on Big Cloud
-
-Can we measure when one Big Cloud co has invested a large amount of
-company’s investment total?
-
-(how can we operationalize this given the dataset? Similar to
-lead/secondary question?)
-
-## Lead/ secondary: Can we quantify/ describe the difference in target firm when Big Cloud Lead investor vs secondary investor?
-
-# Changes over time
-
-When does Amazon become a cloud company? What about the others? Is there
-some “natural” progression? What external data will we need?
-
-# Depending on kind of funding round? Can we test if VC deals are diff than others? Or if amounts are generally bigger when the Big Three invest or lead?
-
-# International and “Third world” development
-
-Would probably be code to incorporate an “all EU” designation if we can
-get an easy list of the country codes. Each company receiving investment
-is listed once per cloud giant in the table below, so if Google invested
-in Asian Company LLC 3 times it’d still only appear once.
-
-| country_code                   | Amazon       | Google        | Microsoft    |
-|:-------------------------------|:-------------|:--------------|:-------------|
-| USA                            | 350 (55.29%) | 1326 (46.46%) | 513 (40.71%) |
-| IND                            | 68 (10.74%)  | 167 (5.85%)   | 126 (10%)    |
-| GBR                            | 38 (6%)      | 180 (6.31%)   | 141 (11.19%) |
-| ISR                            | 19 (3%)      | NA            | 124 (9.84%)  |
-| AUS                            | 16 (2.53%)   | NA            | NA           |
-| CAN                            | 16 (2.53%)   | 52 (1.82%)    | 36 (2.86%)   |
-| AUT                            | 15 (2.37%)   | NA            | NA           |
-| BRA                            | 14 (2.21%)   | 263 (9.22%)   | NA           |
-| NGA                            | 12 (1.9%)    | 83 (2.91%)    | NA           |
-| NA                             | 10 (1.58%)   | NA            | 19 (1.51%)   |
-| All others for this cloud corp | 96 (15.17%)  | 497 (17.41%)  | 165 (13.1%)  |
-| ESP                            | NA           | 82 (2.87%)    | NA           |
-| DEU                            | NA           | 78 (2.73%)    | 51 (4.05%)   |
-| JPN                            | NA           | 71 (2.49%)    | NA           |
-| POL                            | NA           | 62 (2.17%)    | NA           |
-| KOR                            | NA           | 52 (1.82%)    | NA           |
-| CHN                            | NA           | NA            | 157 (12.46%) |
-| FRA                            | NA           | NA            | 84 (6.67%)   |
-| SGP                            | NA           | NA            | 13 (1.03%)   |
-
-Summary statistics by cloud corp
-
-There seems to be Third World development / investment arms maintained
-by the big 3 cloud:
-
-- <https://www.crunchbase.com/organization/umbono>
-- Google’s Africa Investment Fund investment in Series C - Moniepoin
-- NCAIR-Google AI Fund: Nigeria investments
-- Alibaba?
+<!-- # tables for david to work through -->

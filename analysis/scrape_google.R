@@ -1,4 +1,4 @@
-library(rvest)
+# library(rvest)
 
 scrape_google_stories <- function(){
   stories_index <- read_html("https://startups.google.com/alumni/stories/") |>
