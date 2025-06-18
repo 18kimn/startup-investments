@@ -94,11 +94,15 @@ cloud_investments <- investments |>
   left_join(
     select(funding_rounds, uuid, raised_amount_usd, investor_count, investment_type, announced_on, org_uuid),
     by = c("funding_round_uuid" = "uuid")) |> 
-  mutate(is_lead_investor = case_when(
-    !is.na(is_lead_investor) ~ is_lead_investor,
-    investor_count == 1 ~ TRUE,
-    T ~ NA
-  ))
+  mutate(
+    is_sole_investor = investor_count == 1,
+    is_lead_investor = case_when(
+       is_sole_investor ~ TRUE,
+       !is.na(is_lead_investor) ~ is_lead_investor,
+       is.na(is_lead_investor) ~ FALSE,
+       TRUE ~ NA
+    )
+  )
 
 cloud_orgs <- cloud_investments |> 
   select(cloud_giant, investor_name, org_uuid) |> 
@@ -269,8 +273,14 @@ comparisons |>
   left_join(investments, by = "investor_uuid") |> 
   left_join(select(funding_rounds, uuid, org_uuid, investment_type, investor_uuids),
             by = c("funding_round_uuid" = "uuid")) |> 
-  mutate(is_sole_investor = map_dbl(investor_uuids, ~length(.) == 1),
-         is_lead_investor = is_lead_investor | is_sole_investor) |>
+  mutate(is_sole_investor = map_lgl(investor_uuids, ~length(.) == 1),
+         is_lead_investor = case_when(
+           is_sole_investor ~ TRUE,
+           !is.na(is_lead_investor) ~ is_lead_investor,
+           is.na(is_lead_investor) ~ FALSE,
+           TRUE ~ NA
+           )
+  ) |>
   # Have to do these merges up here because the next summarization happens by umbrella corp instead of a specific corp (like all of google as opposed to google startups or whatever)
   left_join(select(acquisitions, acquirer_uuid, acquiree_uuid) |> 
               distinct() |> 
@@ -285,19 +295,19 @@ comparisons |>
   # to accurately track company-level metrics like repeat investments, acquisitions, IPOs
   group_by(criteria, corp_id, org_uuid) |> 
   summarize(
-    is_sole_investor = sum(is_sole_investor, na.rm=T),
-    is_lead_investor = sum(is_lead_investor, na.rm=T),
+    is_sole_investor = any(is_sole_investor, na.rm=T),
+    is_lead_investor = any(is_lead_investor, na.rm=T),
     repeat_investments = n() > 1,
     was_acquired = any(was_acquired),
     had_ipo = any(had_ipo)
   ) |> 
   group_by(criteria) |> 
   summarize(
-    "% sole investor" = sum(is_sole_investor, na.rm=T)/n(),
-    "% lead investor" = sum(is_lead_investor, na.rm=T)/n(),
-    "% repeat investment" = sum(repeat_investments, na.rm=T)/n(),
+    "% sole investor" = 100 * sum(is_sole_investor, na.rm=T)/n(),
+    "% lead investor" = 100 * sum(is_lead_investor, na.rm=T)/n(),
+    "% repeat investment" = 100 * sum(repeat_investments, na.rm=T)/n(),
     # "% acquired" = sum(was_acquired, na.rm=T)/n()
-    "% IPO" = sum(had_ipo, na.rm=T)/n()
+    "% IPO" = 100 * sum(had_ipo, na.rm=T)/n()
   ) |> 
   pivot_longer(cols = contains("%")) |> 
   ggplot(aes(x = fct_relabel(criteria, ~str_wrap(., 10)), fill = name, y = value)) + 
@@ -305,7 +315,7 @@ comparisons |>
   labs(
     x = NULL, y = NULL,
     fill = NULL,
-    caption = "Sole investor or lead investor statuses are taken per investment, while repeat investments, acquisitions, or IPOs are assessed for individual companies." |> str_wrap(80)
+    caption = "All metrics are assessed at the per-company level."
   ) + 
   theme(legend.key.spacing.y = unit(0.3, "cm"))
 ```
@@ -339,7 +349,7 @@ coinvestors <- cloud_investments |>
   anti_join(select(clouds, cloud_giant, name),
             by = c("cloud_giant", "name")) |> 
   arrange(desc(pct_deals)) |> 
-  slice_max(order_by = pct_deals, n = 20, with_ties = FALSE) |> 
+  # slice_max(order_by = pct_deals, n = 20, with_ties = FALSE) |> 
   mutate(deals = paste0(n_deals, " (", pct_deals, "%)"))
 
 ggplot(coinvestors, aes(x = cloud_giant, y = name, fill = pct_deals)) + 
@@ -668,7 +678,12 @@ supply_chain_lead_sole <- supply_chain_investments |>
   left_join(funding_round_participants, by = c("funding_round_uuid" = "uuid")) |> 
   mutate(
     is_sole_investor = map_lgl(investor_names, ~length(.) == 1),
-    is_lead_investor = is_lead_investor | is_sole_investor
+    is_lead_investor = case_when(
+           is_sole_investor ~ TRUE,
+           !is.na(is_lead_investor) ~ is_lead_investor,
+           is.na(is_lead_investor) ~ FALSE,
+           TRUE ~ NA
+           )
   ) |> 
   drop_na(component) |> 
   group_by(name, component) |> 
@@ -1065,31 +1080,46 @@ received_multiple |>
   left_join(select(orgs, uuid, category_groups_list, category_list), by = c("org_uuid" = "uuid")) |> 
   mutate(investor_names = map_chr(investor_names, ~paste0(., collapse = ", "))) |> 
   select(org_name, name, announced_on, investor_names, raised_amount_usd, category_groups_list, category_list) |> 
-  write_csv("~/Downloads/multiple.csv")
+  upload_data("multiple.csv")
 ```
 
 <!-- # tables for david to work through -->
 
 ```{r all_cloud_investments, eval = FALSE}
+total_funding_rounds <- funding_rounds |> 
+  group_by(org_uuid) |> 
+  summarize(
+    n_funding_rounds = n(),
+    most_recent_round = max(announced_on, na.rm=T)
+  )
+
 cloud_investments_audit <- cloud_investments |> 
   mutate(is_sole_investor = investor_count == 1) |> 
   select(cloud_giant, funding_round_uuid, is_lead_investor, is_sole_investor) |> 
-  left_join(select(funding_rounds, uuid, org_uuid), by = c("funding_round_uuid" = "uuid")) |> 
-  left_join(select(orgs, name, uuid, category_list), by = c("org_uuid" = "uuid")) |> 
+  left_join(select(funding_rounds, uuid, org_uuid, announced_on), by = c("funding_round_uuid" = "uuid")) |> 
+  group_by(cloud_giant, org_uuid) |> 
+  summarize(times_lead_investor = sum(is_lead_investor, na.rm=T),
+            times_sole_investor = sum(is_sole_investor, na.rm=T),
+            times_investor = n(),
+            most_recent_cloud_investment = max(announced_on, na.rm=T),
+            ) |> 
+  ungroup() |> 
+  left_join(total_funding_rounds, by = "org_uuid")
+
+# Add in the supply chainn components they correspond to
+cloud_investments_audit <- orgs |> 
+  filter(uuid %in% cloud_investments_audit$org_uuid) |>
+  select(uuid, category_list) |> 
   mutate(category_list = str_split(category_list, ",")) |> 
   unnest(category_list) |> 
   left_join(supply_chain, by = c("category_list" = "supply_chain")) |> 
-  group_by(cloud_giant, name, org_uuid, is_lead_investor, is_sole_investor) |> 
+  group_by(uuid) |> 
   summarize(category_list = paste0(category_list, collapse = ","),
             component = paste0(unique(component[!is.na(component)]), collapse = ",")) |> 
-  group_by(cloud_giant, name, org_uuid, category_list, component) |> 
-  summarize(times_lead_investor = sum(is_lead_investor, na.rm=T),
-            times_sole_investor = sum(is_sole_investor, na.rm=T),
-            times_investor = n()
-            ) |> 
-  ungroup() 
+  right_join(cloud_investments_audit, by = c("uuid" = "org_uuid"))
+
 cloud_investments_audit |> 
-  write_csv("~/Downloads/cloud_investments_audit.csv")
+  upload_data("cloud_investments_audit.csv")
   
 ```
 
@@ -1104,7 +1134,7 @@ non_equity <- cloud_investments |>
   left_join(select(orgs, org_name = name, uuid, category_list), by = c("org_uuid" = "uuid")) 
 
 non_equity |> 
-  write_csv("~/Downloads/non_equity.csv")
+  upload_data("non_equity.csv")
 # name of company, name of cloud, cb url, url, 
 ```
 
@@ -1113,6 +1143,6 @@ non_equity |>
 supply_chain_lead_sole |>
   select(-is_sole_investor) |>
   pivot_wider(values_from=is_lead_investor, names_from=name) |>
-  write_csv("~/Downloads/supply_chain_leads.csv")
+  upload_data("supply_chain_lead_sole.csv")
 
 ```
